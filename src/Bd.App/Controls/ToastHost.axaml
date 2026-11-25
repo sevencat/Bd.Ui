@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:svc="using:Bd.Core.Services"
+             x:Class="Bd.App.Controls.ToastHost"
+             x:DataType="svc:ToastService">
+  <ItemsControl ItemsSource="{Binding Items}" MaxWidth="380" IsHitTestVisible="True">
+    <ItemsControl.ItemTemplate>
+      <DataTemplate x:DataType="svc:ToastMessage">
+        <Border Classes="panel" Padding="12" Margin="0,0,0,8" BoxShadow="0 6 20 0 #66000000">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Grid.Column="0" Width="4" CornerRadius="2"
+                    Background="{DynamicResource AccentBrush}" />
+            <StackPanel Grid.Column="1" Spacing="2">
+              <TextBlock Text="{Binding LevelText}" Classes="tiny" />
+              <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+            </StackPanel>
+            <Button Grid.Column="2" Classes="ghost" Content="✕" Click="OnDismissClick" />
+          </Grid>
+        </Border>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</UserControl>

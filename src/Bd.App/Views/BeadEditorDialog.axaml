@@ -1,0 +1,65 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Bd.Core.ViewModels"
+        x:Class="Bd.App.Views.BeadEditorDialog"
+        x:DataType="vm:BeadEditorViewModel"
+        Title="新建任务"
+        Width="560"
+        Height="600"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="*,Auto" Margin="18">
+    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="12">
+        <TextBlock Text="新建任务" Classes="h1" />
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="标题" Classes="muted" />
+          <TextBox Text="{Binding Title, Mode=TwoWay}" PlaceholderText="一句话描述这个任务" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="描述" Classes="muted" />
+          <TextBox Height="120" AcceptsReturn="True" TextWrapping="Wrap"
+                   Text="{Binding Description, Mode=TwoWay}" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <StackPanel Spacing="4">
+            <TextBlock Text="类型" Classes="muted" />
+            <ComboBox Width="140" ItemsSource="{Binding Types}"
+                      SelectedItem="{Binding SelectedType, Mode=TwoWay}" />
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="优先级" Classes="muted" />
+            <ComboBox Width="100" ItemsSource="{Binding Priorities}"
+                      SelectedItem="{Binding SelectedPriority, Mode=TwoWay}" />
+          </StackPanel>
+          <StackPanel Spacing="4" Width="180">
+            <TextBlock Text="指派给" Classes="muted" />
+            <TextBox Text="{Binding AssigneeInput, Mode=TwoWay}" PlaceholderText="可留空" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="父任务 ID" Classes="muted" />
+          <TextBox Text="{Binding ParentId, Mode=TwoWay}" PlaceholderText="可选，例如 Bd_Ui-lqk" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="标签" Classes="muted" />
+          <TextBox Text="{Binding LabelsText, Mode=TwoWay}" PlaceholderText="逗号分隔，例如 ui, polish" />
+        </StackPanel>
+
+        <TextBlock Text="{Binding ErrorText}" Foreground="{DynamicResource DangerBrush}"
+                   TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,12,0,0">
+      <Button Content="取消" Click="OnCancelClick" />
+      <Button Content="创建" Classes="primary" Command="{Binding SaveCommand}" />
+    </StackPanel>
+  </Grid>
+</Window>

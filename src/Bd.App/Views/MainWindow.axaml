@@ -1,0 +1,80 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Bd.Core.ViewModels"
+        xmlns:controls="using:Bd.App.Controls"
+        x:Class="Bd.App.Views.MainWindow"
+        x:DataType="vm:ShellViewModel"
+        Title="Bd.Ui · beads 看板"
+        Width="1280"
+        Height="820"
+        MinWidth="980"
+        MinHeight="620">
+  <Grid RowDefinitions="Auto,*,Auto">
+    <Border Grid.Row="0" Background="{DynamicResource PanelBackground}"
+            BorderBrush="{DynamicResource BorderBrushSoft}" BorderThickness="0,0,0,1"
+            Padding="16,10">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <TextBlock Text="Bd.Ui" Classes="h1" VerticalAlignment="Center" />
+          <Border Background="{DynamicResource AccentSoft}" CornerRadius="10" Padding="8,2"
+                  VerticalAlignment="Center">
+            <TextBlock Text="beads" Classes="tiny" Foreground="{DynamicResource AccentBrush}" />
+          </Border>
+          <TextBlock Text="{Binding RepoText}" Classes="muted" VerticalAlignment="Center"
+                     MaxWidth="420" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+          <Button Content="＋ 新建" Classes="primary" Click="OnCreateClick" />
+          <Button Content="刷新" Command="{Binding RefreshCommand}" />
+          <Button Content="主题" Classes="ghost" Command="{Binding ToggleThemeCommand}" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="196,*">
+      <Border Grid.Column="0" Background="{DynamicResource PanelBackground}"
+              BorderBrush="{DynamicResource BorderBrushSoft}" BorderThickness="0,0,1,0" Padding="8">
+        <ListBox ItemsSource="{Binding NavItems}"
+                 SelectedItem="{Binding SelectedNav, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:NavItem">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="{Binding Glyph}" FontSize="15" />
+                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Border>
+
+      <Grid Grid.Column="1">
+        <ContentControl Content="{Binding CurrentView}" />
+
+        <Border Width="480" HorizontalAlignment="Right"
+                Background="{DynamicResource AppBackground}"
+                BorderBrush="{DynamicResource BorderBrushSoft}" BorderThickness="1,0,0,0"
+                BoxShadow="-10 0 28 0 #40000000"
+                IsVisible="{Binding IsDetailOpen}">
+          <ContentControl Content="{Binding Detail}" />
+        </Border>
+
+        <controls:ToastHost HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                            Margin="0,0,20,20" DataContext="{Binding Toasts}" />
+      </Grid>
+    </Grid>
+
+    <Border Grid.Row="2" Background="{DynamicResource PanelBackground}"
+            BorderBrush="{DynamicResource BorderBrushSoft}" BorderThickness="0,1,0,0"
+            Padding="16,6">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBlock Text="{Binding StatusText}" Classes="muted" VerticalAlignment="Center" />
+          <ProgressBar IsIndeterminate="True" Width="80" VerticalAlignment="Center"
+                       IsVisible="{Binding IsBusy}" />
+        </StackPanel>
+        <TextBlock Grid.Column="1" Text="{Binding VersionText}" Classes="tiny"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

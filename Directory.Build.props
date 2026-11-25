@@ -1,0 +1,17 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Version>0.1.0</Version>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AvaloniaVersion>12.1.6</AvaloniaVersion>
+    <SimdAioVersion>12.1.6.2</SimdAioVersion>
+    <ExtensionsVersion>10.0.0</ExtensionsVersion>
+    <MvvmVersion>8.4.2</MvvmVersion>
+  </PropertyGroup>
+
+</Project>

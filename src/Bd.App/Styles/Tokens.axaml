@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="AppBackground" Color="#0F1216" />
+      <SolidColorBrush x:Key="PanelBackground" Color="#171B22" />
+      <SolidColorBrush x:Key="PanelAltBackground" Color="#1F2530" />
+      <SolidColorBrush x:Key="HoverBackground" Color="#2A3140" />
+      <SolidColorBrush x:Key="BorderBrushSoft" Color="#2C3442" />
+      <SolidColorBrush x:Key="TextPrimary" Color="#E8ECF3" />
+      <SolidColorBrush x:Key="TextSecondary" Color="#9AA5B5" />
+      <SolidColorBrush x:Key="TextMuted" Color="#6F7A8A" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#5B9DFF" />
+      <SolidColorBrush x:Key="AccentSoft" Color="#1E3350" />
+      <SolidColorBrush x:Key="SuccessBrush" Color="#4CC38A" />
+      <SolidColorBrush x:Key="WarningBrush" Color="#F2B64C" />
+      <SolidColorBrush x:Key="DangerBrush" Color="#E5484D" />
+      <SolidColorBrush x:Key="PurpleBrush" Color="#A78BFA" />
+      <SolidColorBrush x:Key="BacklogBrush" Color="#8B95A5" />
+      <SolidColorBrush x:Key="ReadyBrush" Color="#4CC38A" />
+      <SolidColorBrush x:Key="ProgressBrush" Color="#5B9DFF" />
+      <SolidColorBrush x:Key="BlockedBrush" Color="#E5484D" />
+      <SolidColorBrush x:Key="DoneBrush" Color="#7E8A9A" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="AppBackground" Color="#F4F6FA" />
+      <SolidColorBrush x:Key="PanelBackground" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="PanelAltBackground" Color="#EDF1F7" />
+      <SolidColorBrush x:Key="HoverBackground" Color="#E2E9F3" />
+      <SolidColorBrush x:Key="BorderBrushSoft" Color="#D5DCE7" />
+      <SolidColorBrush x:Key="TextPrimary" Color="#18202B" />
+      <SolidColorBrush x:Key="TextSecondary" Color="#4E5A6A" />
+      <SolidColorBrush x:Key="TextMuted" Color="#7C8798" />
+      <SolidColorBrush x:Key="AccentBrush" Color="#2F6FDE" />
+      <SolidColorBrush x:Key="AccentSoft" Color="#DCE8FB" />
+      <SolidColorBrush x:Key="SuccessBrush" Color="#1F9254" />
+      <SolidColorBrush x:Key="WarningBrush" Color="#B97A12" />
+      <SolidColorBrush x:Key="DangerBrush" Color="#C62F3B" />
+      <SolidColorBrush x:Key="PurpleBrush" Color="#6D4FC0" />
+      <SolidColorBrush x:Key="BacklogBrush" Color="#5C6675" />
+      <SolidColorBrush x:Key="ReadyBrush" Color="#1F9254" />
+      <SolidColorBrush x:Key="ProgressBrush" Color="#2F6FDE" />
+      <SolidColorBrush x:Key="BlockedBrush" Color="#C62F3B" />
+      <SolidColorBrush x:Key="DoneBrush" Color="#5C6675" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

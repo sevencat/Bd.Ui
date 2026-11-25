@@ -431,3 +431,4 @@ FodyWeavers.xsd
 .beads-credential-key
 .beads/proxieddb/
 *.gate.lock*
+/refcode

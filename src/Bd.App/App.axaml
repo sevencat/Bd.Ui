@@ -1,0 +1,39 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bd.Core.ViewModels"
+             xmlns:views="using:Bd.App.Views"
+             xmlns:conv="using:Bd.App.Converters"
+             x:Class="Bd.App.App"
+             RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://Bd.Ui/Styles/Tokens.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <conv:HexBrushConverter x:Key="HexBrush" />
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://Bd.Ui/Styles/Controls.axaml" />
+  </Application.Styles>
+
+  <Application.DataTemplates>
+    <DataTemplate DataType="vm:BoardViewModel">
+      <views:BoardView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:EpicsViewModel">
+      <views:EpicsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:GraphViewModel">
+      <views:GraphView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:SettingsViewModel">
+      <views:SettingsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:BeadDetailViewModel">
+      <views:BeadDetailView />
+    </DataTemplate>
+  </Application.DataTemplates>
+</Application>

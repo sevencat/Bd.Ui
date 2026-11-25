@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bd.Core.ViewModels"
+             x:Class="Bd.App.Views.EpicsView"
+             x:DataType="vm:EpicsViewModel">
+  <Grid RowDefinitions="Auto,*" Margin="16,12,16,16">
+    <Border Grid.Row="0" Classes="panel" Padding="12">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <TextBlock Text="Epics" Classes="h1" VerticalAlignment="Center" />
+        <CheckBox Content="显示空 Epic" IsChecked="{Binding IncludeEmpty, Mode=TwoWay}" />
+        <Button Content="刷新" Classes="ghost" Command="{Binding RefreshCommand}" />
+        <TextBlock Text="{Binding Summary}" Classes="muted" VerticalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer Grid.Row="1" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding Items}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:EpicRowViewModel">
+            <Border Classes="panel" Padding="14" Margin="0,0,0,10">
+              <StackPanel Spacing="10">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding Title}" Classes="h2" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <TextBlock Text="{Binding Id}" Classes="tiny" />
+                      <TextBlock Text="{Binding StatusText}" Classes="tiny" />
+                      <TextBlock Text="{Binding AttributionText}" Classes="tiny"
+                                 Foreground="{DynamicResource PurpleBrush}" />
+                      <TextBlock Text="{Binding UpdatedText}" Classes="tiny" />
+                    </StackPanel>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                    <Button Content="展开/收起" Classes="ghost" Click="OnToggleClick" />
+                    <Button Content="详情" Classes="ghost" Click="OnOpenClick" />
+                  </StackPanel>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,Auto">
+                  <ProgressBar Minimum="0" Maximum="1" Value="{Binding Ratio}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding ProgressText}" Classes="muted" Margin="10,0,0,0" />
+                </Grid>
+
+                <ItemsControl ItemsSource="{Binding Children}" IsVisible="{Binding IsExpanded}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:EpicChildRow">
+                      <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
+                              Padding="10,6" Margin="0,0,0,4"
+                              DoubleTapped="OnChildDoubleTapped">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                          <TextBlock Text="{Binding Id}" Classes="tiny" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Grid.Column="2" Text="{Binding StatusText}" Classes="tiny" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

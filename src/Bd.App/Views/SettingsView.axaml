@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bd.Core.ViewModels"
+             xmlns:conv="using:Avalonia.Data.Converters"
+             x:Class="Bd.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="16,12,16,16" Spacing="12" MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Text="设置" Classes="h1" />
+
+      <Border Classes="panel" Padding="16">
+        <StackPanel Spacing="12">
+          <TextBlock Text="仓库与 bd" Classes="h2" />
+          <StackPanel Spacing="4">
+            <TextBlock Text="仓库路径（含 .beads 的目录，留空用当前目录）" Classes="muted" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Text="{Binding RepoPath, Mode=TwoWay}" PlaceholderText="D:\code\my-repo" />
+              <Button Grid.Column="1" Content="浏览…" Margin="8,0,0,0" Click="OnBrowseClick" />
+            </Grid>
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="bd 可执行文件" Classes="muted" />
+            <TextBox Text="{Binding BdBinaryPath, Mode=TwoWay}" PlaceholderText="bd" />
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="存储后端" Classes="muted" />
+            <TextBlock Text="当前仅支持 bd CLI；离线浏览请使用下方“演示模式”。" Classes="tiny" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="16">
+        <StackPanel Spacing="12">
+          <TextBlock Text="界面与刷新" Classes="h2" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="主题" Classes="muted" VerticalAlignment="Center" />
+            <ComboBox Width="140" ItemsSource="{Binding Themes}"
+                      SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" />
+            <CheckBox Content="只读模式（禁止写操作）" IsChecked="{Binding ReadOnly, Mode=TwoWay}" />
+          </StackPanel>
+          <CheckBox Content="演示模式（内置示例数据，不连接 bd）" IsChecked="{Binding DemoMode, Mode=TwoWay}" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Text="轮询间隔" Classes="muted" VerticalAlignment="Center" />
+            <Slider Width="220" Minimum="1" Maximum="60" TickFrequency="1"
+                    Value="{Binding PollSeconds, Mode=TwoWay}" />
+            <TextBlock VerticalAlignment="Center"
+                       Text="{Binding PollSeconds, StringFormat='{}{0:0} 秒'}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="16">
+        <StackPanel Spacing="12">
+          <TextBlock Text="归属识别" Classes="h2" />
+          <StackPanel Spacing="4">
+            <TextBlock Text="人类操作者（写操作的 --actor）" Classes="muted" />
+            <TextBox Text="{Binding HumanActor, Mode=TwoWay}" PlaceholderText="留空则使用 bd 默认" />
+          </StackPanel>
+          <StackPanel Spacing="4">
+            <TextBlock Text="人员名单（逗号或空格分隔）" Classes="muted" />
+            <TextBox Text="{Binding HumanAllowlistText, Mode=TwoWay}" PlaceholderText="alice, bob" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="保存并应用" Classes="primary" Command="{Binding SaveCommand}" />
+        <Button Content="还原" Command="{Binding ReloadCommand}" />
+        <Button Content="运行自检" Command="{Binding RunDoctorCommand}" />
+        <TextBlock Text="{Binding SaveStatus}" Classes="muted" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding ConfigPath}" Classes="tiny" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <Border Classes="panel" Padding="16" IsVisible="{Binding DoctorReport, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
+        <StackPanel Spacing="6">
+          <TextBlock Text="自检报告" Classes="h2" />
+          <SelectableTextBlock Text="{Binding DoctorReport}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="16">
+        <StackPanel Spacing="4">
+          <TextBlock Text="关于" Classes="h2" />
+          <SelectableTextBlock Text="{Binding AppVersion}" />
+          <SelectableTextBlock Text="{Binding LogDirectory}" Classes="tiny" TextWrapping="Wrap" />
+          <TextBlock Text="演示模式下可离线浏览看板、Epics、依赖图与详情。" Classes="muted" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
