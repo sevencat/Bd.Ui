@@ -33,6 +33,12 @@ public partial class BoardView : UserControl
             return;
         }
 
+        // 树状视图没有列可落，拖动只会白跑一趟。
+        if (Vm?.IsTreeMode == true)
+        {
+            return;
+        }
+
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             return;

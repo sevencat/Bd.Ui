@@ -208,33 +208,6 @@ public sealed class ServicesTests
     }
 
     [Fact]
-    public async Task Dependency_service_rejects_cycles()
-    {
-        var store = new InMemoryBdStore();
-        store.Beads.Add(Make("dep-a", dependencies: [("dep-b", "open")]));
-        store.Beads.Add(Make("dep-b"));
-        var service = new DependencyService(store);
-
-        var act = () => service.AddAsync("dep-b", "dep-a", DependencyType.Blocks, CancellationToken.None);
-
-        (await act.Should().ThrowAsync<BdException>()).Which.Code.Should().Be(BdErrorCode.InvalidArgument);
-        store.RecordedDependencyTypes.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task Dependency_service_adds_non_cycle_edge()
-    {
-        var store = new InMemoryBdStore();
-        store.Beads.Add(Make("dep-c"));
-        store.Beads.Add(Make("dep-d"));
-        var service = new DependencyService(store);
-
-        await service.AddAsync("dep-c", "dep-d", DependencyType.Blocks, CancellationToken.None);
-
-        store.RecordedDependencyTypes.Should().ContainSingle().Which.Should().Be(DependencyType.Blocks);
-    }
-
-    [Fact]
     public async Task Epic_progress_counts_closed_children()
     {
         var store = new InMemoryBdStore();

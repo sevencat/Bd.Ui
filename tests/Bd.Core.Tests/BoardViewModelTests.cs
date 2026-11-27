@@ -149,6 +149,120 @@ public sealed class BoardViewModelTests
         toast.Items.Should().Contain(item => item.Level == ToastLevel.Error && item.Text == "读取失败");
     }
 
+    [Fact]
+    public async Task 树状视图按父子关系递归挂载并缩进()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.Add(Bead("p1", "父任务", "open"));
+        store.Beads.Add(Bead("c1", "子任务", "open", parent: "p1"));
+        store.Beads.Add(Bead("g1", "孙任务", "open", parent: "c1"));
+        store.Beads.Add(Bead("t1", "独立任务", "open"));
+
+        var (vm, _) = CreateBoard(store);
+        await vm.RefreshAsync();
+
+        vm.TreeRoots.Select(node => node.Id).Should().BeEquivalentTo(["p1", "t1"]);
+
+        var parent = vm.TreeRoots.Single(node => node.Id == "p1");
+        parent.Depth.Should().Be(0);
+        parent.IndentWidth.Should().Be(0);
+        parent.HasChildren.Should().BeTrue();
+        parent.ChildCountText.Should().Be("1 项子任务");
+
+        var child = parent.Children.Should().ContainSingle().Which;
+        child.Id.Should().Be("c1");
+        child.Depth.Should().Be(1);
+        child.IndentWidth.Should().Be(18);
+        child.Children.Should().ContainSingle().Which.Depth.Should().Be(2);
+
+        vm.TreeRoots.Single(node => node.Id == "t1").HasChildren.Should().BeFalse();
+        vm.IsTreeEmpty.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task 树状视图默认展开顶层深层折叠()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.Add(Bead("p1", "父任务", "open"));
+        store.Beads.Add(Bead("c1", "子任务", "open", parent: "p1"));
+        store.Beads.Add(Bead("g1", "孙任务", "open", parent: "c1"));
+
+        var (vm, _) = CreateBoard(store);
+        await vm.RefreshAsync();
+
+        vm.TreeRows.Select(node => node.Id).Should().Equal("p1", "c1");
+    }
+
+    [Fact]
+    public async Task 树状视图展开折叠切换可见行()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.Add(Bead("p1", "父任务", "open"));
+        store.Beads.Add(Bead("c1", "子任务", "open", parent: "p1"));
+        store.Beads.Add(Bead("g1", "孙任务", "open", parent: "c1"));
+
+        var (vm, _) = CreateBoard(store);
+        await vm.RefreshAsync();
+
+        vm.ExpandAll();
+        vm.TreeRows.Select(node => node.Id).Should().Equal("p1", "c1", "g1");
+
+        vm.TreeRows.Single(node => node.Id == "c1").ToggleCommand.Execute(null);
+        vm.TreeRows.Select(node => node.Id).Should().Equal("p1", "c1");
+
+        vm.CollapseAll();
+        vm.TreeRows.Select(node => node.Id).Should().Equal("p1");
+
+        vm.TreeRoots[0].ToggleCommand.Execute(null);
+        vm.TreeRows.Select(node => node.Id).Should().Equal("p1", "c1");
+    }
+
+    [Fact]
+    public async Task 树状视图刷新后保留展开状态()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.Add(Bead("p1", "父任务", "open"));
+        store.Beads.Add(Bead("c1", "子任务", "open", parent: "p1"));
+
+        var (vm, _) = CreateBoard(store);
+        await vm.RefreshAsync();
+
+        vm.CollapseAll();
+        await vm.RefreshCoreAsync(CancellationToken.None, silent: true);
+
+        vm.TreeRoots[0].IsExpanded.Should().BeFalse();
+        vm.TreeRows.Select(node => node.Id).Should().Equal("p1");
+    }
+
+    [Fact]
+    public async Task 树状视图把父任务缺失的任务升为根()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.Add(Bead("c1", "孤儿任务", "open", parent: "gone"));
+        store.Beads.Add(Bead("c2", "自引用任务", "open", parent: "c2"));
+
+        var (vm, _) = CreateBoard(store);
+        await vm.RefreshAsync();
+
+        vm.TreeRoots.Select(node => node.Id).Should().BeEquivalentTo(["c1", "c2"]);
+        vm.TreeRows.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task 父子成环时不在树上无限递归()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.Add(Bead("a", "任务 A", "open", parent: "b"));
+        store.Beads.Add(Bead("b", "任务 B", "open", parent: "a"));
+
+        var (vm, _) = CreateBoard(store);
+        await vm.RefreshAsync();
+
+        vm.ExpandAll();
+        vm.TreeRows.Select(node => node.Id).Should().OnlyHaveUniqueItems();
+        vm.TreeRows.Should().HaveCount(2);
+    }
+
     private static (BoardViewModel Vm, ToastService Toast) CreateBoard(IBdStore store, ToastService? toast = null)
     {
         toast ??= new ToastService();
@@ -160,7 +274,7 @@ public sealed class BoardViewModelTests
         return (vm, toast);
     }
 
-    private static Bead Bead(string id, string title, string status) => new()
+    private static Bead Bead(string id, string title, string status, string? parent = null) => new()
     {
         Id = id,
         Title = title,
@@ -169,6 +283,7 @@ public sealed class BoardViewModelTests
         PriorityValue = 2,
         Owner = "alice",
         CreatedBy = "alice",
+        ParentId = parent,
         CreatedAt = DateTimeOffset.UtcNow.AddDays(-1),
         UpdatedAt = DateTimeOffset.UtcNow.AddMinutes(-1)
     };

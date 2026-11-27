@@ -8,7 +8,7 @@ namespace Bd.App.Tests;
 
 internal static class TestScene
 {
-    public static Bead Bead(string id, string title, string status = "open", string type = "task", int priority = 2) => new()
+    public static Bead Bead(string id, string title, string status = "open", string type = "task", int priority = 2, string? parent = null) => new()
     {
         Id = id,
         Title = title,
@@ -17,6 +17,7 @@ internal static class TestScene
         PriorityValue = priority,
         Owner = "alice",
         CreatedBy = "alice",
+        ParentId = parent,
         CreatedAt = DateTimeOffset.UtcNow.AddHours(-2),
         UpdatedAt = DateTimeOffset.UtcNow.AddMinutes(-5)
     };

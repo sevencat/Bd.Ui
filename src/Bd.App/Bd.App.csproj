@@ -8,6 +8,8 @@
     <SelfContained>false</SelfContained>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <!-- Windows 可执行文件图标，取自 beads 官方 logo（Assets/beads.svg，脚本 scripts/make-icon.ps1 生成） -->
+    <ApplicationIcon>Assets\beads.ico</ApplicationIcon>
     <!-- 只对发布生效：去掉已被 ilrepack 合并进 Avalonia.SimdAio 的 OpenGL/Metal/Vulkan/MicroCom 拷贝项 -->
     <AvaloniaSimdAioTrimMergedBackends>true</AvaloniaSimdAioTrimMergedBackends>
   </PropertyGroup>
@@ -33,6 +35,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Bd.Core\Bd.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
 </Project>

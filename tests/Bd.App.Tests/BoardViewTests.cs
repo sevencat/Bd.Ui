@@ -39,6 +39,39 @@ public sealed class BoardViewTests
     }
 
     [AvaloniaFact]
+    public async Task 树状视图渲染父子层级并可折叠()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.Add(TestScene.Bead("p1", "父任务"));
+        store.Beads.Add(TestScene.Bead("c1", "子任务", parent: "p1"));
+
+        var vm = new BoardViewModel(
+            new BoardService(store),
+            new BeadWriteService(store),
+            new AttributionService(AppConfig.Default),
+            new ToastService());
+
+        await vm.RefreshAsync();
+        vm.ViewIndex = 1;
+
+        var window = TestScene.Show(new BoardView { DataContext = vm });
+        var texts = window.Texts();
+
+        texts.Should().Contain("父任务");
+        texts.Should().Contain("子任务");
+
+        vm.CollapseAll();
+        TestScene.Relayout(window);
+        window.Texts().Should().Contain("父任务");
+        window.Texts().Should().NotContain("子任务");
+
+        vm.TreeRoots[0].ToggleCommand.Execute(null);
+        TestScene.Relayout(window);
+        window.Texts().Should().Contain("子任务");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task 过滤后只渲染命中的卡片()
     {
         var store = new InMemoryBdStore();

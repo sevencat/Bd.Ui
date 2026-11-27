@@ -18,8 +18,8 @@ Bd.App (Avalonia)
   └─ App.axaml.cs（文件日志 + 全局异常捕获）
         │
 Bd.Core
-  ├─ ViewModels   Shell / Board / Epics / Graph / Settings / BeadDetail / Editor
-  ├─ Services     BoardService / BeadDetailService / EpicProgressService / DependencyService
+  ├─ ViewModels   Shell / Board / BoardTree / Epics / Settings / BeadDetail / Editor
+  ├─ Services     BoardService / BeadDetailService / EpicProgressService
   │               BeadWriteService / ArchiveService / AttributionService
   │               RefreshCoordinator / ToastService / AppSession
   │               DemoDataProvider / ReadOnlyGuard
@@ -67,8 +67,8 @@ Program.Main
 读路径：
 
 ```
-BoardViewModel / EpicsViewModel / GraphViewModel
-  → BoardService / EpicProgressService / DependencyService
+BoardViewModel / EpicsViewModel
+  → BoardService / EpicProgressService
       → IBdStore（StoreProvider 代理）
           → BdCliStore → BdProcessRunner → bd --json
 ```
@@ -122,7 +122,6 @@ ViewModel 命令
 - 通过 `Sevencat.Avalonia.SimdAIO` 提供 Avalonia 运行时，`Program.cs` 使用 `UseSimdSkia`，Win32 组合固定 `RenderingMode = Software`。
 - 仓库不直接引用 SkiaSharp / HarfBuzzSharp 原生库；发布为自包含单文件（`PublishSingleFile`、`IncludeNativeLibrariesForSelfExtract`、`PublishTrimmed=false`）。
 - 主题使用 Avalonia 内置 `FluentTheme` 与 `Styles/Tokens.axaml`、`Styles/Controls.axaml`；不要额外引入 Fluent 主题包，也不要依赖 `avares://Bd.App`（资源前缀是 `avares://Bd.Ui`）。
-- 自定义绘制（依赖图）只用 Avalonia 基础控件与画刷，不引入第三方图表库。
 
 ## 测试策略
 
@@ -149,6 +148,5 @@ ViewModel 命令
 - 单窗口、单仓库；不支持 scotty 的多项目聚合与 Web 端。
 - 存储后端仅实现 bd CLI 与内置演示数据；Dolt 直连（SQL）未实现，配置中的其他后端值会归一化为 `cli`。
 - 未实现 Focus 视图与使用统计。
-- 依赖图布局为固定分层布局，不提供手工拖拽节点位置。
 - 拖到 Blocked 列不会写入 bd 状态，因为阻塞语义由依赖关系决定。
 - 演示数据只读，且不会持久化任何修改。

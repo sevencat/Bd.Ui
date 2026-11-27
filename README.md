@@ -1,19 +1,19 @@
 # Bd.Ui
 
-基于 Avalonia 的 bd（beads）桌面客户端：看板、Epic 进度、依赖图与任务详情，所有数据来自本地 `bd` CLI。
+基于 Avalonia 的 bd（beads）桌面客户端：看板、Epic 进度与任务详情，所有数据来自本地 `bd` CLI。
 
 ## 功能一览（对照 scotty）
 
 | 能力 | Bd.Ui | 说明 |
 | --- | --- | --- |
 | 五列看板（Backlog / Ready / In Progress / Blocked / Done） | 支持 | 列定义与 bd 状态一一映射 |
+| 树状视图 | 支持 | 按 parent-child 递归展开，卡片可逐级展开/折叠，也可一键全部展开 |
 | 拖拽移列 | 支持 | 乐观更新；失败自动回滚并提示原因；拖到 Blocked 只做本地标记，不写库 |
 | 筛选 | 支持 | 搜索、类型、优先级、标签、包含已归档 |
 | 新建 / 编辑任务 | 支持 | 标题、类型、优先级、负责人、描述；写操作串行化 |
 | 任务详情 | 支持 | 评论、依赖、子任务、Epic 进度、创建者归属 |
 | Epic 视图 | 支持 | 进度条、子任务完成数、归档过滤 |
-| 依赖图 | 支持 | 可拖拽建立依赖，环检测与重复边校验 |
-| 评论 / 标签 / 依赖增删 | 支持 | 均通过 bd CLI 落库 |
+| 评论 / 标签 | 支持 | 均通过 bd CLI 落库 |
 | 归档 / 删除 | 支持 | 归档走标签约定，删除需确认 |
 | human / agent 归属 | 支持 | 依据创建者与 allowlist 标注 |
 | 只读模式 | 支持 | 写命令在 UI 层直接拒绝并说明原因 |
@@ -43,12 +43,13 @@ dotnet run --project src/Bd.App
 dotnet test Bd.Ui.slnx
 ```
 
-首次启动若找不到 `bd`，应用不会报错退出，而是进入**只读演示模式**，可直接浏览看板、Epics、依赖图与详情。在「设置」中取消“演示模式”、填写仓库路径与 bd 路径后保存，即切换到真实仓库。
+首次启动若找不到 `bd`，应用不会报错退出，而是进入**只读演示模式**，可直接浏览看板、Epics 与详情。在「设置」中取消“演示模式”、填写仓库路径与 bd 路径后保存，即切换到真实仓库。
 
 ## 使用说明
 
 - `Ctrl+N` 新建任务；`Ctrl+R` / `F5` 刷新；`Ctrl+F` 聚焦搜索。
-- `Ctrl+1` 看板、`Ctrl+2` Epics、`Ctrl+3` 依赖图、`Ctrl+4` 设置；`Esc` 关闭详情抽屉。
+- `Ctrl+1` 看板、`Ctrl+2` Epics、`Ctrl+3` 设置；`Esc` 关闭详情抽屉。
+- 看板页顶部的「看板 / 树状」下拉切换视图；树状视图按父子关系缩进，点卡片左侧箭头展开或折叠，工具栏可一键「全部展开 / 全部折叠」。树状视图不支持拖拽移列。
 - 拖拽卡片到 Done 会关闭任务；拖到 Blocked 只提示原因，不写库（bd 的阻塞由依赖决定）。
 - 只读模式（设置项或演示数据）下，所有写入口直接拒绝并 toast 说明，不会产生 bd 子进程。
 
@@ -88,6 +89,9 @@ pwsh scripts/set-version.ps1 0.2.0
 pwsh scripts/package.ps1
 # 复用已有 artifacts/publish
 pwsh scripts/package.ps1 -SkipBuild
+
+# 重新生成程序图标（源文件是 Assets/beads.svg）
+pwsh scripts/make-icon.ps1
 ```
 
 发布产物：
@@ -96,6 +100,15 @@ pwsh scripts/package.ps1 -SkipBuild
 - `artifacts/package/Bd.Ui-<version>-win-x64.zip` 及同名 `.sha256`
 
 CI 工作流见 `.github/workflows/ci.yml`，执行内容与 `scripts/ci.ps1` 完全一致。
+
+## 程序图标
+
+窗口与可执行文件使用 beads 官方 logo（`https://github.com/gastownhall/beads/blob/main/docs/images/logo.svg`：`#25C2A0` 圆角方块 + 白色粗体 `bd`）。
+
+- `src/Bd.App/Assets/beads.svg`：官方源文件
+- `src/Bd.App/Assets/beads.ico`：16/24/32/48/64/128/256 多尺寸图标，供 exe 与窗口使用
+- `src/Bd.App/Assets/beads.png`：应用内 26px 品牌图标
+- `scripts/make-icon.ps1`：从官方 logo 重绘上述 ico/png，改配色或尺寸后重跑即可
 
 ## 疑难排查
 

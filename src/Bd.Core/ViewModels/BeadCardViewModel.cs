@@ -33,6 +33,7 @@ public sealed class BeadCardViewModel
         };
         IsArchived = bead.IsArchived;
         IsEpic = bead.IsEpic;
+        ProjectText = bead.Project ?? string.Empty;
     }
 
     public Bead Model { get; }
@@ -64,4 +65,7 @@ public sealed class BeadCardViewModel
     public string AttributionText { get; }
 
     public string AttributionKey { get; }
+
+    /// <summary>来源项目（聚合模式下有值，单项目模式为空字符串）。</summary>
+    public string ProjectText { get; }
 }

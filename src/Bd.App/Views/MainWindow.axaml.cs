@@ -51,10 +51,6 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
             case Key.D3 when ctrl:
-                _shell.Navigate("graph");
-                e.Handled = true;
-                break;
-            case Key.D4 when ctrl:
                 _shell.Navigate("settings");
                 e.Handled = true;
                 break;

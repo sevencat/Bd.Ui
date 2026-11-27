@@ -53,6 +53,13 @@ public sealed record Bead
     [JsonPropertyName("comment_count")]
     public int CommentCount { get; init; }
 
+    /// <summary>
+    /// 聚合模式下来源项目（数据库名）。单项目模式为 <c>null</c>，
+    /// 由 <c>Bd.Core.Dolt.CompositeBdStore</c> 在合并时打标，用于区分同 ID 的不同项目数据。
+    /// </summary>
+    [JsonIgnore]
+    public string? Project { get; init; }
+
     [JsonIgnore]
     public BeadStatus Status => BdEnumMaps.ParseStatus(StatusRaw);
 

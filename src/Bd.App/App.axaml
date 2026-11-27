@@ -26,9 +26,6 @@
     <DataTemplate DataType="vm:EpicsViewModel">
       <views:EpicsView />
     </DataTemplate>
-    <DataTemplate DataType="vm:GraphViewModel">
-      <views:GraphView />
-    </DataTemplate>
     <DataTemplate DataType="vm:SettingsViewModel">
       <views:SettingsView />
     </DataTemplate>

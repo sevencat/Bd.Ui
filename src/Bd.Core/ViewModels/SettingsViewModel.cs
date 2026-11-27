@@ -1,5 +1,6 @@
 using System.Reflection;
 using Bd.Core.Config;
+using Bd.Core.Dolt;
 using Bd.Core.Logging;
 using Bd.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -12,17 +13,26 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly AppSession _session;
     private readonly DoctorService _doctor;
     private readonly ToastService _toast;
+    private readonly DoltConnectionFactory _dolt;
     private bool _suppress;
 
-    public SettingsViewModel(AppSession session, DoctorService doctor, ToastService toast)
+    public SettingsViewModel(
+        AppSession session,
+        DoctorService doctor,
+        ToastService toast,
+        DoltConnectionFactory dolt)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _doctor = doctor ?? throw new ArgumentNullException(nameof(doctor));
         _toast = toast ?? throw new ArgumentNullException(nameof(toast));
+        _dolt = dolt ?? throw new ArgumentNullException(nameof(dolt));
         ReloadFromSession();
     }
 
     public IReadOnlyList<string> Themes { get; } = ["Dark", "Light"];
+
+    /// <summary>可选数据源；demo 由下方“演示模式”开关控制，不在此列表中。</summary>
+    public IReadOnlyList<string> Backends { get; } = [StorageBackends.Cli, StorageBackends.Dolt];
 
     public string ConfigPath => JsonAppConfigStore.DefaultFilePath();
 
@@ -58,6 +68,24 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _demoMode;
 
     [ObservableProperty]
+    private string _selectedBackend = StorageBackends.Cli;
+
+    [ObservableProperty]
+    private string _doltHost = DoltDefaults.Host;
+
+    [ObservableProperty]
+    private string _doltPortText = DoltDefaults.Port.ToString();
+
+    [ObservableProperty]
+    private string _doltUser = DoltDefaults.User;
+
+    [ObservableProperty]
+    private string _doltDatabase = DoltDefaults.Database;
+
+    [ObservableProperty]
+    private string _doltStatus = string.Empty;
+
+    [ObservableProperty]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -80,6 +108,11 @@ public sealed partial class SettingsViewModel : ObservableObject
             SelectedTheme = config.Theme;
             ReadOnly = config.ReadOnly;
             DemoMode = config.DemoMode;
+            SelectedBackend = config.StorageBackend == StorageBackends.Dolt ? StorageBackends.Dolt : StorageBackends.Cli;
+            DoltHost = config.DoltHost;
+            DoltPortText = config.DoltPort.ToString();
+            DoltUser = config.DoltUser;
+            DoltDatabase = config.DoltDatabase;
         }
         finally
         {
@@ -92,6 +125,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         if (_suppress || IsBusy)
         {
+            return;
+        }
+
+        if (!TryParseDoltPort(out var doltPort))
+        {
+            SaveStatus = "Dolt 端口无效";
+            _toast.Warning("Dolt 端口必须是 1-65535 之间的整数");
             return;
         }
 
@@ -110,7 +150,11 @@ public sealed partial class SettingsViewModel : ObservableObject
                 Theme = SelectedTheme,
                 ReadOnly = ReadOnly,
                 DemoMode = DemoMode,
-                StorageBackend = "cli"
+                StorageBackend = SelectedBackend,
+                DoltHost = DoltHost,
+                DoltPort = doltPort,
+                DoltUser = DoltUser,
+                DoltDatabase = DoltDatabase
             };
 
             await _session.ApplyAsync(config, CancellationToken.None);
@@ -170,11 +214,47 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public async Task TestDoltConnectionAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var probe = await _dolt.TestAsync(BuildDoltSettings(), CancellationToken.None);
+            DoltStatus = probe.Message;
+            if (probe.Ok)
+            {
+                _toast.Success("Dolt 连接正常");
+            }
+            else
+            {
+                _toast.Warning("Dolt 连接失败，详见设置页");
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
     public void Reload()
     {
         ReloadFromSession();
+        DoltStatus = string.Empty;
         SaveStatus = "已还原为当前生效配置";
     }
+
+    private DoltConnectionSettings BuildDoltSettings() => new()
+    {
+        Host = string.IsNullOrWhiteSpace(DoltHost) ? DoltDefaults.Host : DoltHost.Trim(),
+        Port = TryParseDoltPort(out var port) ? port : DoltDefaults.Port,
+        User = string.IsNullOrWhiteSpace(DoltUser) ? DoltDefaults.User : DoltUser.Trim(),
+        Database = string.IsNullOrWhiteSpace(DoltDatabase) ? DoltDefaults.Database : DoltDatabase.Trim(),
+        UseTls = _session.Config.DoltUseTls
+    };
+
+    private bool TryParseDoltPort(out int port) =>
+        int.TryParse(DoltPortText?.Trim(), out port) && port is >= 1 and <= 65_535;
 
     private static string BuildAppVersion()
     {

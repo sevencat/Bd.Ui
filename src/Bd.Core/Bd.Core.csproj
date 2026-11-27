@@ -7,6 +7,12 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="$(MvvmVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(ExtensionsVersion)" />
+    <PackageReference Include="MySqlConnector" Version="$(MySqlConnectorVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- DoltSql / DoltStore 的映射与 SQL 拼装需要在不连库的前提下做单测。 -->
+    <InternalsVisibleTo Include="Bd.Core.Tests" />
   </ItemGroup>
 
 </Project>

@@ -24,7 +24,42 @@
           </StackPanel>
           <StackPanel Spacing="4">
             <TextBlock Text="存储后端" Classes="muted" />
-            <TextBlock Text="当前仅支持 bd CLI；离线浏览请使用下方“演示模式”。" Classes="tiny" TextWrapping="Wrap" />
+            <ComboBox ItemsSource="{Binding Backends}" SelectedItem="{Binding SelectedBackend, Mode=TwoWay}"
+                      HorizontalAlignment="Left" MinWidth="180" />
+            <TextBlock Text="cli = 通过 bd 子进程读写（默认）；dolt = 直连远程服务器直接读写（「全部项目」聚合模式只读）。"
+                       Classes="tiny" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="16">
+        <StackPanel Spacing="12">
+          <TextBlock Text="远程 Dolt" Classes="h2" />
+          <TextBlock Classes="tiny" TextWrapping="Wrap"
+                     Text="密码从环境变量 BEADS_DOLT_PASSWORD 读取，不写入配置文件。一个数据库即一个项目。" />
+          <Grid ColumnDefinitions="*,140" ColumnSpacing="8">
+            <StackPanel Spacing="4">
+              <TextBlock Text="主机" Classes="muted" />
+              <TextBox Text="{Binding DoltHost, Mode=TwoWay}" PlaceholderText="1.15.245.172" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4">
+              <TextBlock Text="端口" Classes="muted" />
+              <TextBox Text="{Binding DoltPortText, Mode=TwoWay}" PlaceholderText="7050" />
+            </StackPanel>
+          </Grid>
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+            <StackPanel Spacing="4">
+              <TextBlock Text="用户" Classes="muted" />
+              <TextBox Text="{Binding DoltUser, Mode=TwoWay}" PlaceholderText="nwms" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4">
+              <TextBlock Text="数据库（项目）" Classes="muted" />
+              <TextBox Text="{Binding DoltDatabase, Mode=TwoWay}" PlaceholderText="king_bdui" />
+            </StackPanel>
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="测试连接" Command="{Binding TestDoltConnectionCommand}" />
+            <TextBlock Text="{Binding DoltStatus}" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" />
           </StackPanel>
         </StackPanel>
       </Border>
@@ -83,7 +118,7 @@
           <TextBlock Text="关于" Classes="h2" />
           <SelectableTextBlock Text="{Binding AppVersion}" />
           <SelectableTextBlock Text="{Binding LogDirectory}" Classes="tiny" TextWrapping="Wrap" />
-          <TextBlock Text="演示模式下可离线浏览看板、Epics、依赖图与详情。" Classes="muted" TextWrapping="Wrap" />
+          <TextBlock Text="演示模式下可离线浏览看板、Epics 与详情。" Classes="muted" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
     </StackPanel>

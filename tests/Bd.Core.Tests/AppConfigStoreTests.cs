@@ -71,10 +71,30 @@ public sealed class AppConfigStoreTests : IDisposable
     [Fact]
     public void Unsupported_storage_backend_falls_back_to_cli()
     {
-        new AppConfig { StorageBackend = "dolt" }.Normalize().StorageBackend.Should().Be("cli");
+        new AppConfig { StorageBackend = "dolt" }.Normalize().StorageBackend.Should().Be("dolt");
+        new AppConfig { StorageBackend = " DOLT " }.Normalize().StorageBackend.Should().Be("dolt");
         new AppConfig { StorageBackend = "unknown" }.Normalize().StorageBackend.Should().Be("cli");
         new AppConfig { StorageBackend = "" }.Normalize().StorageBackend.Should().Be("cli");
         new AppConfig { StorageBackend = "DEMO" }.Normalize().StorageBackend.Should().Be("demo");
+    }
+
+    [Fact]
+    public void Dolt_settings_are_trimmed_and_clamped()
+    {
+        var config = new AppConfig
+        {
+            DoltHost = "  10.0.0.1  ",
+            DoltPort = 0,
+            DoltUser = " ",
+            DoltDatabase = " king_fh2sharp ",
+            StorageBackend = "dolt"
+        }.Normalize();
+
+        config.DoltHost.Should().Be("10.0.0.1");
+        config.DoltPort.Should().Be(1);
+        config.DoltUser.Should().Be(DoltDefaults.User);
+        config.DoltDatabase.Should().Be("king_fh2sharp");
+        config.UsesDolt.Should().BeTrue();
     }
 
     [Fact]

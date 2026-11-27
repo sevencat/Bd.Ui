@@ -34,10 +34,6 @@ public sealed class DemoModeTests : IDisposable
             .LoadAsync("demo-api", CancellationToken.None);
         detail.Comments.Should().HaveCount(2);
         detail.Bead.ParentId.Should().Be("demo-epic");
-
-        var graph = await new DependencyService(store).LoadNeighborhoodAsync("demo-bug", 2, CancellationToken.None);
-        graph.Edges.Should().NotBeEmpty();
-        graph.Nodes.Should().Contain(node => node.Id == "demo-api");
     }
 
     [Fact]

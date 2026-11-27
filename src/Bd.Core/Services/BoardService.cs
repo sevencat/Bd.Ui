@@ -40,7 +40,8 @@ public sealed class BoardService
         var beads = active
             .Concat(closed)
             .Where(filter.Matches)
-            .GroupBy(static bead => bead.Id, StringComparer.Ordinal)
+            // 聚合模式下不同库可能存在相同 ID，按「项目 + ID」去重。
+            .GroupBy(static bead => (bead.Project, bead.Id))
             .Select(static group => group.First())
             .ToList();
 

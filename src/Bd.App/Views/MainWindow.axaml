@@ -1,10 +1,12 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Bd.Core.ViewModels"
+        xmlns:dolt="using:Bd.Core.Dolt"
         xmlns:controls="using:Bd.App.Controls"
         x:Class="Bd.App.Views.MainWindow"
         x:DataType="vm:ShellViewModel"
         Title="Bd.Ui · beads 看板"
+        Icon="/Assets/beads.ico"
         Width="1280"
         Height="820"
         MinWidth="980"
@@ -15,6 +17,7 @@
             Padding="16,10">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Image Source="/Assets/beads.png" Width="26" Height="26" VerticalAlignment="Center" />
           <TextBlock Text="Bd.Ui" Classes="h1" VerticalAlignment="Center" />
           <Border Background="{DynamicResource AccentSoft}" CornerRadius="10" Padding="8,2"
                   VerticalAlignment="Center">
@@ -22,6 +25,18 @@
           </Border>
           <TextBlock Text="{Binding RepoText}" Classes="muted" VerticalAlignment="Center"
                      MaxWidth="420" TextTrimming="CharacterEllipsis" />
+          <ComboBox ItemsSource="{Binding Projects}"
+                    SelectedItem="{Binding CurrentProject, Mode=TwoWay}"
+                    IsVisible="{Binding IsProjectSwitcherVisible}"
+                    VerticalAlignment="Center" MinWidth="200" MaxWidth="340">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="dolt:ProjectInfo">
+                <TextBlock Text="{Binding Label}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Content="⟳" Classes="ghost" Command="{Binding ReloadProjectsCommand}"
+                  IsVisible="{Binding IsProjectSwitcherVisible}" ToolTip.Tip="刷新项目列表" />
         </StackPanel>
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
           <Button Content="＋ 新建" Classes="primary" Click="OnCreateClick" />

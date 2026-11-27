@@ -1,6 +1,7 @@
 using Bd.Core.Abstractions;
 using Bd.Core.BdCli;
 using Bd.Core.Config;
+using Bd.Core.Dolt;
 using Bd.Core.Services;
 using Bd.Core.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,8 @@ public static class ServiceRegistration
         services.AddSingleton<StoreProvider>();
         services.AddSingleton<IBdStore>(static sp => sp.GetRequiredService<StoreProvider>());
         services.AddSingleton<IAppConfigStore>(static _ => new JsonAppConfigStore());
+        services.AddSingleton(static _ => new DoltConnectionFactory());
+        services.AddSingleton<ProjectCatalog>();
         services.AddSingleton<IClock>(SystemClock.Instance);
         services.AddSingleton<ToastService>();
         services.AddSingleton(static _ => new AttributionService(AppConfig.Default));
@@ -31,13 +34,11 @@ public static class ServiceRegistration
         services.AddSingleton<BeadWriteService>();
         services.AddSingleton<ArchiveService>();
         services.AddSingleton<CommentService>();
-        services.AddSingleton<DependencyService>();
         services.AddSingleton<EpicProgressService>();
         services.AddSingleton<DoctorService>();
 
         services.AddSingleton<BoardViewModel>();
         services.AddSingleton<EpicsViewModel>();
-        services.AddSingleton<GraphViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<BeadDetailViewModel>();
         services.AddSingleton<BeadEditorViewModel>();
@@ -54,8 +55,29 @@ public static class ServiceRegistration
     {
         ArgumentNullException.ThrowIfNull(config);
 
-        // bd 缺失或显式开启演示模式时不启动子进程，直接用内置数据保证界面可浏览。
-        if (DemoDataProvider.ShouldUseDemoData(config))
+        // 显式开启演示模式时不连库、不启动子进程。
+        if (DemoDataProvider.IsDemoRequested(config))
+        {
+            return DemoDataProvider.CreateStore();
+        }
+
+        // 直连 Dolt 不依赖 bd 可执行文件，因此不能套用“bd 缺失即演示数据”的兜底。
+        if (config.StorageBackend == StorageBackends.Dolt)
+        {
+            var settings = DoltConnectionSettings.FromConfig(config);
+            var factory = new DoltConnectionFactory();
+
+            // 「全部项目」：多库合并视图，自身已拒绝写入。
+            if (config.DoltAggregateAll)
+            {
+                return CompositeBdStore.ForServer(factory, settings, new ProjectCatalog(factory));
+            }
+
+            // 写路径已 SQL 化，只读与否交给「设置 → 只读模式」。
+            return ReadOnlyGuard.Wrap(new DoltStore(factory, settings), config.ReadOnly);
+        }
+
+        if (!DemoDataProvider.IsBdAvailable(config.BdBinaryPath))
         {
             return DemoDataProvider.CreateStore();
         }

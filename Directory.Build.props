@@ -12,6 +12,7 @@
     <SimdAioVersion>12.1.6.2</SimdAioVersion>
     <ExtensionsVersion>10.0.0</ExtensionsVersion>
     <MvvmVersion>8.4.2</MvvmVersion>
+    <MySqlConnectorVersion>2.6.2</MySqlConnectorVersion>
   </PropertyGroup>
 
 </Project>
