@@ -26,30 +26,18 @@ public sealed record BdVersionInfo(int Major, int Minor, int Patch)
     public override string ToString() => $"{Major}.{Minor}.{Patch}";
 }
 
+/// <summary>
+/// 环境自检：只连接 Dolt 服务器核对版本、schema 与任务数量，
+/// 不再依赖本地 bd 可执行文件或 <c>.beads</c> 目录。
+/// </summary>
 public sealed class DoctorService
 {
-    private static readonly BdVersionInfo MinimumVersion = new(1, 0, 0);
     private readonly IBdStore _store;
 
     public DoctorService(IBdStore store) => _store = store;
 
-    public async Task<DoctorReport> CheckAsync(string? repoPath, CancellationToken cancellationToken)
+    public async Task<DoctorReport> CheckAsync(CancellationToken cancellationToken)
     {
-        var problems = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(repoPath))
-        {
-            problems.Add("尚未配置 beads 仓库路径");
-        }
-        else if (!Directory.Exists(repoPath))
-        {
-            problems.Add($"仓库路径不存在：{repoPath}");
-        }
-        else if (!Directory.Exists(Path.Combine(repoPath, ".beads")))
-        {
-            problems.Add($"目录中缺少 .beads：{repoPath}");
-        }
-
         DoctorReport report;
         try
         {
@@ -60,29 +48,46 @@ public sealed class DoctorService
             report = new DoctorReport
             {
                 Ok = false,
-                RepoPath = repoPath ?? string.Empty,
                 Summary = ex.Message,
                 Issues = [ex.Message]
             };
         }
 
-        var version = BdVersionInfo.TryParse(report.BdVersion);
-        if (version is null)
+        // 演示数据没有真实库，不做版本/schema 判定。
+        if (string.Equals(_store.BackendName, DemoDataProvider.BackendName, StringComparison.Ordinal))
         {
-            problems.Add("无法识别 bd 版本，请确认 bd 可执行文件可用");
-        }
-        else if (version.Major < MinimumVersion.Major)
-        {
-            problems.Add($"bd 版本过低：{version}，至少需要 {MinimumVersion}");
+            return report;
         }
 
-        var issues = report.Issues.Concat(problems).Where(static text => !string.IsNullOrWhiteSpace(text)).ToList();
+        return Evaluate(report);
+    }
+
+    /// <summary>把库内自检结果折算成可直接展示的结论：版本缺失、schema 异常都算问题。</summary>
+    public static DoctorReport Evaluate(DoctorReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        var problems = new List<string>();
+        if (BdVersionInfo.TryParse(report.BdVersion) is null)
+        {
+            problems.Add("数据库缺少 beads 版本记录（local_metadata.bd_version），请确认连接的是 beads 库");
+        }
+
+        if (report.SchemaVersion <= 0)
+        {
+            problems.Add("未读到 schema 版本，库结构可能不完整");
+        }
+
+        var issues = report.Issues
+            .Concat(problems)
+            .Where(static text => !string.IsNullOrWhiteSpace(text))
+            .ToList();
+
         return report with
         {
             Ok = report.Ok && issues.Count == 0,
-            RepoPath = repoPath ?? report.RepoPath,
             Summary = issues.Count == 0
-                ? $"环境检查通过（bd {report.BdVersion}）"
+                ? $"Dolt 自检通过（beads {report.BdVersion} · schema {report.SchemaVersion}）"
                 : $"发现 {issues.Count} 项问题",
             Issues = issues
         };

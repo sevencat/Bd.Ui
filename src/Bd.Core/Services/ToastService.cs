@@ -1,5 +1,5 @@
+using Bd.Core.Abstractions;
 using System.Collections.ObjectModel;
-using Bd.Core.BdCli;
 
 namespace Bd.Core.Services;
 

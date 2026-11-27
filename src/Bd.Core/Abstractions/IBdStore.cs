@@ -73,8 +73,8 @@ public sealed record DoctorReport
 }
 
 /// <summary>
-/// 存储层唯一入口。当前由 <c>BdCliStore</c> 实现（演示模式使用内置只读数据），
-/// 上层（Services/ViewModels）不得感知具体实现。
+/// 存储层唯一入口。当前由 <c>DoltStore</c> 直连服务器实现（「全部项目」用 <c>CompositeBdStore</c> 合并，
+/// 演示模式使用内置只读数据），上层（Services/ViewModels）不得感知具体实现。
 /// </summary>
 public interface IBdStore
 {

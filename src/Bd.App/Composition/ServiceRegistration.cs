@@ -1,5 +1,4 @@
 using Bd.Core.Abstractions;
-using Bd.Core.BdCli;
 using Bd.Core.Config;
 using Bd.Core.Dolt;
 using Bd.Core.Services;
@@ -55,57 +54,22 @@ public static class ServiceRegistration
     {
         ArgumentNullException.ThrowIfNull(config);
 
-        // 显式开启演示模式时不连库、不启动子进程。
+        // 显式开启演示模式时不连库。
         if (DemoDataProvider.IsDemoRequested(config))
         {
             return DemoDataProvider.CreateStore();
         }
 
-        // 直连 Dolt 不依赖 bd 可执行文件，因此不能套用“bd 缺失即演示数据”的兜底。
-        if (config.StorageBackend == StorageBackends.Dolt)
+        var settings = DoltConnectionSettings.FromConfig(config);
+        var factory = new DoltConnectionFactory();
+
+        // 「全部项目」：多库合并视图，自身已拒绝写入。
+        if (config.DoltAggregateAll)
         {
-            var settings = DoltConnectionSettings.FromConfig(config);
-            var factory = new DoltConnectionFactory();
-
-            // 「全部项目」：多库合并视图，自身已拒绝写入。
-            if (config.DoltAggregateAll)
-            {
-                return CompositeBdStore.ForServer(factory, settings, new ProjectCatalog(factory));
-            }
-
-            // 写路径已 SQL 化，只读与否交给「设置 → 只读模式」。
-            return ReadOnlyGuard.Wrap(new DoltStore(factory, settings), config.ReadOnly);
+            return CompositeBdStore.ForServer(factory, settings, new ProjectCatalog(factory));
         }
 
-        if (!DemoDataProvider.IsBdAvailable(config.BdBinaryPath))
-        {
-            return DemoDataProvider.CreateStore();
-        }
-
-        var repo = ResolveRepoPath(config.RepoPath);
-        var runner = new BdProcessRunner(config.BdBinaryPath);
-        var store = new BdCliStore(runner, repo, config.HumanActor);
-        return ReadOnlyGuard.Wrap(store, config.ReadOnly);
-    }
-
-    private static string ResolveRepoPath(string? configured)
-    {
-        if (!string.IsNullOrWhiteSpace(configured))
-        {
-            return Path.GetFullPath(configured);
-        }
-
-        var directory = new DirectoryInfo(Environment.CurrentDirectory);
-        while (directory is not null)
-        {
-            if (Directory.Exists(Path.Combine(directory.FullName, ".beads")))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        return Environment.CurrentDirectory;
+        // 写路径全部走 SQL，只读与否交给「设置 → 只读模式」。
+        return ReadOnlyGuard.Wrap(new DoltStore(factory, settings), config.ReadOnly);
     }
 }

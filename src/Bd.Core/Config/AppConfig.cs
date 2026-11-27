@@ -4,10 +4,6 @@ namespace Bd.Core.Config;
 
 public sealed record AppConfig
 {
-    public string? RepoPath { get; init; }
-
-    public string BdBinaryPath { get; init; } = "bd";
-
     public string? HumanActor { get; init; }
 
     public IReadOnlyList<string> HumanAllowlist { get; init; } = [];
@@ -18,7 +14,7 @@ public sealed record AppConfig
 
     public bool ReadOnly { get; init; }
 
-    /// <summary>显式使用内置演示数据，不启动 bd 子进程。</summary>
+    /// <summary>显式使用内置演示数据，不连接 Dolt。</summary>
     public bool DemoMode { get; init; }
 
     /// <summary>单个日志文件的滚动上限（KB）。</summary>
@@ -26,8 +22,6 @@ public sealed record AppConfig
 
     /// <summary>滚动日志的保留天数。</summary>
     public int LogRetentionDays { get; init; } = 7;
-
-    public string StorageBackend { get; init; } = StorageBackends.Cli;
 
     /// <summary>远程 Dolt 服务器主机（MySQL 协议）。</summary>
     public string DoltHost { get; init; } = DoltDefaults.Host;
@@ -50,9 +44,6 @@ public sealed record AppConfig
     [JsonIgnore]
     public TimeSpan PollInterval => TimeSpan.FromSeconds(Math.Clamp(PollSeconds, 1, 300));
 
-    [JsonIgnore]
-    public bool UsesDolt => StorageBackend == StorageBackends.Dolt;
-
     public bool IsHuman(string? actor, IReadOnlyList<string> extraAllowlist)
     {
         if (string.IsNullOrWhiteSpace(actor))
@@ -74,12 +65,10 @@ public sealed record AppConfig
 
     public AppConfig Normalize() => this with
     {
-        BdBinaryPath = string.IsNullOrWhiteSpace(BdBinaryPath) ? "bd" : BdBinaryPath.Trim(),
         PollSeconds = Math.Clamp(PollSeconds, 1, 300),
         LogMaxFileSizeKb = Math.Clamp(LogMaxFileSizeKb, 64, 102_400),
         LogRetentionDays = Math.Clamp(LogRetentionDays, 1, 365),
         Theme = string.IsNullOrWhiteSpace(Theme) ? "Dark" : Theme,
-        StorageBackend = StorageBackends.Normalize(StorageBackend),
         DoltHost = string.IsNullOrWhiteSpace(DoltHost) ? DoltDefaults.Host : DoltHost.Trim(),
         DoltPort = Math.Clamp(DoltPort, 1, 65_535),
         DoltUser = string.IsNullOrWhiteSpace(DoltUser) ? DoltDefaults.User : DoltUser.Trim(),
@@ -88,23 +77,6 @@ public sealed record AppConfig
             .Where(static value => !string.IsNullOrWhiteSpace(value))
             .Select(static value => value.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)]
-    };
-}
-
-/// <summary>存储后端取值；未知值一律回退为 bd CLI。</summary>
-public static class StorageBackends
-{
-    public const string Cli = "cli";
-
-    public const string Dolt = "dolt";
-
-    public const string Demo = "demo";
-
-    public static string Normalize(string? backend) => backend?.Trim().ToLowerInvariant() switch
-    {
-        Dolt => Dolt,
-        Demo => Demo,
-        _ => Cli
     };
 }
 

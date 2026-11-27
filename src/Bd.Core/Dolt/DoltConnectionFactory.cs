@@ -1,4 +1,4 @@
-using Bd.Core.BdCli;
+using Bd.Core.Abstractions;
 using MySqlConnector;
 
 namespace Bd.Core.Dolt;

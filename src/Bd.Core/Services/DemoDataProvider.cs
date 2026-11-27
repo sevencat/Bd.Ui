@@ -1,13 +1,12 @@
 using Bd.Core.Abstractions;
-using Bd.Core.BdCli;
 using Bd.Core.Config;
 using Bd.Core.Domain;
 
 namespace Bd.Core.Services;
 
 /// <summary>
-/// 内置演示数据的唯一来源：bd 缺失或显式开启演示模式时，用这份数据填满看板、
-/// Epics、依赖图与详情抽屉，使无 bd 环境也能浏览全部界面。演示存储只读。
+/// 内置演示数据的唯一来源：显式开启演示模式时，用这份数据填满看板、
+/// Epics、树状视图与详情抽屉，使没有 Dolt 环境也能浏览全部界面。演示存储只读。
 /// </summary>
 public static class DemoDataProvider
 {
@@ -15,42 +14,13 @@ public static class DemoDataProvider
 
     public const string Version = "demo";
 
-    public const string ReadOnlyReason = "演示数据不支持写入：当前未连接 bd 仓库，请在设置中配置仓库与 bd 可执行文件后重试。";
+    public const string ReadOnlyReason = "演示数据不支持写入：请在设置中关闭演示模式并连接 Dolt 服务器后重试。";
 
-    /// <summary>配置显式要求演示模式（DemoMode=true 或 StorageBackend=demo）。</summary>
+    /// <summary>配置显式要求演示模式。</summary>
     public static bool IsDemoRequested(AppConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
-        return config.DemoMode
-            || string.Equals(config.StorageBackend, BackendName, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>判断 bd 可执行文件是否存在：带路径时看文件，裸文件名时搜 PATH。</summary>
-    public static bool IsBdAvailable(string? bdBinaryPath)
-    {
-        var candidate = string.IsNullOrWhiteSpace(bdBinaryPath) ? "bd" : bdBinaryPath.Trim();
-
-        if (candidate.Contains(Path.DirectorySeparatorChar)
-            || candidate.Contains(Path.AltDirectorySeparatorChar))
-        {
-            return File.Exists(candidate) || File.Exists(candidate + ".exe");
-        }
-
-        var names = OperatingSystem.IsWindows()
-            ? new[] { candidate, candidate + ".exe", candidate + ".cmd", candidate + ".bat" }
-            : [candidate];
-
-        var pathVariable = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-        return pathVariable
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Any(directory => names.Any(name => File.Exists(Path.Combine(directory, name))));
-    }
-
-    /// <summary>演示模式或找不到 bd 时回退到内置演示数据，避免首启即报错。</summary>
-    public static bool ShouldUseDemoData(AppConfig config)
-    {
-        ArgumentNullException.ThrowIfNull(config);
-        return IsDemoRequested(config) || !IsBdAvailable(config.BdBinaryPath);
+        return config.DemoMode;
     }
 
     /// <summary>创建只读的演示存储；任何写操作都会带着 <see cref="ReadOnlyReason"/> 被拒绝。</summary>
@@ -98,7 +68,7 @@ public static class DemoDataProvider
             {
                 Id = "demo-ui",
                 Title = "完成设置界面校验",
-                Description = "仓库路径、bd 路径与轮询间隔需要即时校验并给出可操作提示。",
+                Description = "Dolt 连接参数与轮询间隔需要即时校验并给出可操作提示。",
                 StatusRaw = "open",
                 PriorityValue = 2,
                 TypeRaw = "task",
@@ -387,7 +357,7 @@ public static class DemoDataProvider
             {
                 Ok = true,
                 BdVersion = DemoDataProvider.Version,
-                Summary = "演示数据模式：未连接 bd CLI，仅供界面浏览"
+                Summary = "演示数据模式：未连接 Dolt，仅供界面浏览"
             });
 
         public Task<string> CreateAsync(CreateBeadRequest request, CancellationToken cancellationToken) =>

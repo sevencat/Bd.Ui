@@ -10,33 +10,9 @@
 
       <Border Classes="panel" Padding="16">
         <StackPanel Spacing="12">
-          <TextBlock Text="仓库与 bd" Classes="h2" />
-          <StackPanel Spacing="4">
-            <TextBlock Text="仓库路径（含 .beads 的目录，留空用当前目录）" Classes="muted" />
-            <Grid ColumnDefinitions="*,Auto">
-              <TextBox Text="{Binding RepoPath, Mode=TwoWay}" PlaceholderText="D:\code\my-repo" />
-              <Button Grid.Column="1" Content="浏览…" Margin="8,0,0,0" Click="OnBrowseClick" />
-            </Grid>
-          </StackPanel>
-          <StackPanel Spacing="4">
-            <TextBlock Text="bd 可执行文件" Classes="muted" />
-            <TextBox Text="{Binding BdBinaryPath, Mode=TwoWay}" PlaceholderText="bd" />
-          </StackPanel>
-          <StackPanel Spacing="4">
-            <TextBlock Text="存储后端" Classes="muted" />
-            <ComboBox ItemsSource="{Binding Backends}" SelectedItem="{Binding SelectedBackend, Mode=TwoWay}"
-                      HorizontalAlignment="Left" MinWidth="180" />
-            <TextBlock Text="cli = 通过 bd 子进程读写（默认）；dolt = 直连远程服务器直接读写（「全部项目」聚合模式只读）。"
-                       Classes="tiny" TextWrapping="Wrap" />
-          </StackPanel>
-        </StackPanel>
-      </Border>
-
-      <Border Classes="panel" Padding="16">
-        <StackPanel Spacing="12">
           <TextBlock Text="远程 Dolt" Classes="h2" />
           <TextBlock Classes="tiny" TextWrapping="Wrap"
-                     Text="密码从环境变量 BEADS_DOLT_PASSWORD 读取，不写入配置文件。一个数据库即一个项目。" />
+                     Text="应用只通过 MySQL 协议连接 Dolt 服务器读写，不调用 bd 命令行。密码从环境变量 BEADS_DOLT_PASSWORD 读取，不写入配置文件；一个数据库即一个项目。" />
           <Grid ColumnDefinitions="*,140" ColumnSpacing="8">
             <StackPanel Spacing="4">
               <TextBlock Text="主机" Classes="muted" />
@@ -61,6 +37,11 @@
             <Button Content="测试连接" Command="{Binding TestDoltConnectionCommand}" />
             <TextBlock Text="{Binding DoltStatus}" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" />
           </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <CheckBox Content="启用 TLS" IsChecked="{Binding DoltUseTls, Mode=TwoWay}" />
+            <CheckBox Content="全部项目（合并服务器上所有库，只读）"
+                      IsChecked="{Binding DoltAggregateAll, Mode=TwoWay}" />
+          </StackPanel>
         </StackPanel>
       </Border>
 
@@ -73,7 +54,9 @@
                       SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" />
             <CheckBox Content="只读模式（禁止写操作）" IsChecked="{Binding ReadOnly, Mode=TwoWay}" />
           </StackPanel>
-          <CheckBox Content="演示模式（内置示例数据，不连接 bd）" IsChecked="{Binding DemoMode, Mode=TwoWay}" />
+          <CheckBox Content="演示模式（内置示例数据，不连接 Dolt）" IsChecked="{Binding DemoMode, Mode=TwoWay}" />
+          <TextBlock Classes="tiny" TextWrapping="Wrap"
+                     Text="勾选演示模式后忽略上面的 Dolt 连接设置，仅用于离线预览界面；取消勾选即恢复连接真实库。" />
           <StackPanel Orientation="Horizontal" Spacing="10">
             <TextBlock Text="轮询间隔" Classes="muted" VerticalAlignment="Center" />
             <Slider Width="220" Minimum="1" Maximum="60" TickFrequency="1"
@@ -88,8 +71,8 @@
         <StackPanel Spacing="12">
           <TextBlock Text="归属识别" Classes="h2" />
           <StackPanel Spacing="4">
-            <TextBlock Text="人类操作者（写操作的 --actor）" Classes="muted" />
-            <TextBox Text="{Binding HumanActor, Mode=TwoWay}" PlaceholderText="留空则使用 bd 默认" />
+            <TextBlock Text="人类操作者（写操作的署名作者）" Classes="muted" />
+            <TextBox Text="{Binding HumanActor, Mode=TwoWay}" PlaceholderText="留空则沿用库内最近一次作者" />
           </StackPanel>
           <StackPanel Spacing="4">
             <TextBlock Text="人员名单（逗号或空格分隔）" Classes="muted" />
@@ -118,7 +101,7 @@
           <TextBlock Text="关于" Classes="h2" />
           <SelectableTextBlock Text="{Binding AppVersion}" />
           <SelectableTextBlock Text="{Binding LogDirectory}" Classes="tiny" TextWrapping="Wrap" />
-          <TextBlock Text="演示模式下可离线浏览看板、Epics 与详情。" Classes="muted" TextWrapping="Wrap" />
+          <TextBlock Text="演示模式下可离线浏览看板、树状视图、Epics 与详情。" Classes="muted" TextWrapping="Wrap" />
         </StackPanel>
       </Border>
     </StackPanel>

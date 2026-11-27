@@ -1,4 +1,4 @@
-using Bd.Core.BdCli;
+using Bd.Core.Abstractions;
 using Bd.Core.Dolt;
 using FluentAssertions;
 using MySqlConnector;

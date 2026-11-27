@@ -1,5 +1,4 @@
 using Bd.Core.Abstractions;
-using Bd.Core.BdCli;
 using Bd.Core.Config;
 using Bd.Core.Domain;
 using Bd.Core.Services;
@@ -89,16 +88,11 @@ public sealed class DemoModeTests : IDisposable
     }
 
     [Fact]
-    public void 显式演示模式或缺少_bd_时回退到内置数据()
+    public void 只有显式开启演示模式才使用内置数据()
     {
-        DemoDataProvider.ShouldUseDemoData(new AppConfig { DemoMode = true }).Should().BeTrue();
-        DemoDataProvider.ShouldUseDemoData(new AppConfig { StorageBackend = "demo" }).Should().BeTrue();
-        DemoDataProvider.ShouldUseDemoData(new AppConfig { BdBinaryPath = MissingBinary() }).Should().BeTrue();
-
-        var binary = Path.Combine(_directory, "bd.exe");
-        Directory.CreateDirectory(_directory);
-        File.WriteAllText(binary, string.Empty);
-        DemoDataProvider.ShouldUseDemoData(new AppConfig { BdBinaryPath = binary }).Should().BeFalse();
+        DemoDataProvider.IsDemoRequested(new AppConfig { DemoMode = true }).Should().BeTrue();
+        DemoDataProvider.IsDemoRequested(new AppConfig()).Should().BeFalse();
+        DemoDataProvider.IsDemoRequested(new AppConfig { DoltHost = "10.0.0.9" }).Should().BeFalse();
     }
 
     [Fact]
@@ -120,7 +114,4 @@ public sealed class DemoModeTests : IDisposable
             Directory.Delete(_directory, recursive: true);
         }
     }
-
-    private static string MissingBinary() =>
-        Path.Combine(Path.GetTempPath(), "bd-ui-tests", Guid.NewGuid().ToString("N"), "bd-not-here.exe");
 }

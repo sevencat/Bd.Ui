@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Bd.Core.BdCli;
+using System.Text.Json.Serialization;
 
 namespace Bd.Core.Config;
 
@@ -15,6 +15,17 @@ public interface IAppConfigStore
 /// <summary>配置只写用户 AppData，采用临时文件加替换的原子写，损坏时备份并回退默认值。</summary>
 public sealed class JsonAppConfigStore : IAppConfigStore
 {
+    /// <summary>配置文件使用 snake_case，保持与既有 config.json 的兼容。</summary>
+    private static readonly JsonSerializerOptions ConfigJson = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     private readonly string _filePath;
 
     public JsonAppConfigStore(string? filePath = null) =>
@@ -42,7 +53,7 @@ public sealed class JsonAppConfigStore : IAppConfigStore
                 return AppConfig.Default;
             }
 
-            var config = JsonSerializer.Deserialize<AppConfig>(json, BdJson.Options);
+            var config = JsonSerializer.Deserialize<AppConfig>(json, ConfigJson);
             return (config ?? AppConfig.Default).Normalize();
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
@@ -62,7 +73,7 @@ public sealed class JsonAppConfigStore : IAppConfigStore
             Directory.CreateDirectory(directory);
         }
 
-        var json = JsonSerializer.Serialize(normalized, BdJson.Options);
+        var json = JsonSerializer.Serialize(normalized, ConfigJson);
         var tempPath = $"{_filePath}.{Guid.NewGuid():N}.tmp";
 
         await File.WriteAllTextAsync(tempPath, json, cancellationToken).ConfigureAwait(false);

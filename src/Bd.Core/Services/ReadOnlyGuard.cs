@@ -1,12 +1,11 @@
 using Bd.Core.Abstractions;
-using Bd.Core.BdCli;
 using Bd.Core.Domain;
 
 namespace Bd.Core.Services;
 
 /// <summary>
 /// 只读装饰器：读操作全部透传，写操作在进入存储层之前立即拒绝并给出原因，
-/// 保证只读配置下不会产生任何 bd 子进程写入。
+/// 保证只读配置下不会向 Dolt 发出任何写语句。
 /// </summary>
 public sealed class ReadOnlyGuard : IBdStore
 {

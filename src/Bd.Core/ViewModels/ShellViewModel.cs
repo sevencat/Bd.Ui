@@ -106,10 +106,10 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
     private string _statusText = "准备就绪";
 
     [ObservableProperty]
-    private string _repoText = "未配置仓库";
+    private string _repoText = "未连接 Dolt";
 
     [ObservableProperty]
-    private string _versionText = "bd ?";
+    private string _versionText = "dolt ?";
 
     /// <summary>服务器上可切换的项目（直连 Dolt 时才有内容）。</summary>
     [ObservableProperty]
@@ -163,7 +163,7 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
         try
         {
             IsBusy = true;
-            StatusText = "正在连接 bd...";
+            StatusText = "正在连接 Dolt...";
             await _session.InitializeAsync(cancellationToken);
             ApplyConfig(_session.Config);
             await RefreshAllAsync(cancellationToken);
@@ -298,7 +298,7 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
             }
 
             var version = await _store.GetVersionAsync(cancellationToken);
-            return IsDoltBackend ? $"dolt {version}" : "bd " + version;
+            return $"dolt {version}";
         }
         catch (Exception ex)
         {
@@ -312,10 +312,8 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
             && string.Equals(_store.BackendName, DemoDataProvider.BackendName, StringComparison.Ordinal);
         IsReadOnly = config.ReadOnly || _isDemo || config.DoltAggregateAll;
         RepoText = _isDemo
-            ? "演示数据 · 未连接 bd"
-            : IsDoltBackend
-                ? $"dolt://{config.DoltHost}:{config.DoltPort}/{(config.DoltAggregateAll ? ProjectInfo.AggregateDatabase + "（全部项目）" : config.DoltDatabase)}"
-                : string.IsNullOrWhiteSpace(config.RepoPath) ? $"当前目录 · {Environment.CurrentDirectory}" : config.RepoPath;
+            ? "演示数据 · 未连接 Dolt"
+            : $"dolt://{config.DoltHost}:{config.DoltPort}/{(config.DoltAggregateAll ? ProjectInfo.AggregateDatabase + "（全部项目）" : config.DoltDatabase)}";
         _coordinator.SetInterval(config.PollInterval);
         ThemeChanged?.Invoke(this, config.Theme);
         Settings.ReloadFromSession();
@@ -332,9 +330,8 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
         UpdateStatus();
     }
 
-    private bool IsDoltBackend =>
-        _store.IsConfigured
-        && string.Equals(_store.BackendName, DoltStore.BackendNameValue, StringComparison.Ordinal);
+    /// <summary>除显式演示模式外，唯一数据源就是 Dolt 服务器。</summary>
+    private bool IsDoltBackend => !_isDemo;
 
     /// <summary>重新枚举服务器上的项目；仅直连 Dolt 时有效。</summary>
     [RelayCommand]

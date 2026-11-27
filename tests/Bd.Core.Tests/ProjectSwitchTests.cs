@@ -23,7 +23,6 @@ public sealed class ProjectSwitchTests
 
         var configStore = new MemoryConfigStore(new AppConfig
         {
-            StorageBackend = StorageBackends.Dolt,
             DoltDatabase = "king_bdui"
         });
 

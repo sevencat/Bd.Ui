@@ -1,5 +1,4 @@
 using Bd.Core.Abstractions;
-using Bd.Core.BdCli;
 using Bd.Core.Dolt;
 using Bd.Core.Domain;
 using Bd.Core.Filters;

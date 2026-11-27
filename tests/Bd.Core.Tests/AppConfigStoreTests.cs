@@ -17,7 +17,6 @@ public sealed class AppConfigStoreTests : IDisposable
 
         var config = await store.LoadAsync(CancellationToken.None);
 
-        config.BdBinaryPath.Should().Be("bd");
         config.PollInterval.Should().Be(TimeSpan.FromSeconds(5));
     }
 
@@ -27,7 +26,7 @@ public sealed class AppConfigStoreTests : IDisposable
         var store = new JsonAppConfigStore(FilePath);
         var config = new AppConfig
         {
-            RepoPath = "F:\\code\\repo",
+            DoltDatabase = "  beads_db  ",
             HumanActor = "sevencat",
             PollSeconds = 0,
             Theme = " ",
@@ -37,7 +36,7 @@ public sealed class AppConfigStoreTests : IDisposable
         await store.SaveAsync(config, CancellationToken.None);
         var loaded = await store.LoadAsync(CancellationToken.None);
 
-        loaded.RepoPath.Should().Be("F:\\code\\repo");
+        loaded.DoltDatabase.Should().Be("beads_db");
         loaded.PollSeconds.Should().Be(1);
         loaded.Theme.Should().Be("Dark");
         loaded.HumanAllowlist.Should().Equal("alice");
@@ -61,21 +60,11 @@ public sealed class AppConfigStoreTests : IDisposable
     {
         var store = new JsonAppConfigStore(FilePath);
 
-        await store.SaveAsync(new AppConfig { RepoPath = "x" }, CancellationToken.None);
-        await store.SaveAsync(new AppConfig { RepoPath = "y" }, CancellationToken.None);
+        await store.SaveAsync(new AppConfig { Theme = "x" }, CancellationToken.None);
+        await store.SaveAsync(new AppConfig { Theme = "y" }, CancellationToken.None);
 
         File.Exists(FilePath).Should().BeTrue();
         Directory.GetFiles(_directory, "*.tmp").Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Unsupported_storage_backend_falls_back_to_cli()
-    {
-        new AppConfig { StorageBackend = "dolt" }.Normalize().StorageBackend.Should().Be("dolt");
-        new AppConfig { StorageBackend = " DOLT " }.Normalize().StorageBackend.Should().Be("dolt");
-        new AppConfig { StorageBackend = "unknown" }.Normalize().StorageBackend.Should().Be("cli");
-        new AppConfig { StorageBackend = "" }.Normalize().StorageBackend.Should().Be("cli");
-        new AppConfig { StorageBackend = "DEMO" }.Normalize().StorageBackend.Should().Be("demo");
     }
 
     [Fact]
@@ -86,15 +75,13 @@ public sealed class AppConfigStoreTests : IDisposable
             DoltHost = "  10.0.0.1  ",
             DoltPort = 0,
             DoltUser = " ",
-            DoltDatabase = " king_fh2sharp ",
-            StorageBackend = "dolt"
+            DoltDatabase = " king_fh2sharp "
         }.Normalize();
 
         config.DoltHost.Should().Be("10.0.0.1");
         config.DoltPort.Should().Be(1);
         config.DoltUser.Should().Be(DoltDefaults.User);
         config.DoltDatabase.Should().Be("king_fh2sharp");
-        config.UsesDolt.Should().BeTrue();
     }
 
     [Fact]

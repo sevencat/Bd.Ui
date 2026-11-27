@@ -1,15 +1,14 @@
 using System.Data;
 using System.Globalization;
 using Bd.Core.Abstractions;
-using Bd.Core.BdCli;
 using Bd.Core.Domain;
 using MySqlConnector;
 
 namespace Bd.Core.Dolt;
 
 /// <summary>
-/// 直连远程 Dolt（MySQL 协议）的存储实现：一条 SQL 对应一次 bd 子进程调用，
-/// 读路径完全不走 bd CLI，写路径见 <c>DoltStore.Write.cs</c>。
+/// 直连远程 Dolt（MySQL 协议）的存储实现：读路径见本文件，写路径见 <c>DoltStore.Write.cs</c>，
+/// 落库格式与 bd 保持兼容，但全程不启动 bd 子进程。
 /// </summary>
 public sealed partial class DoltStore : IBdStore
 {
@@ -71,7 +70,7 @@ public sealed partial class DoltStore : IBdStore
         BdException bd => bd,
         MySqlException mySql => mySql.Number switch
         {
-            1049 => new BdException(BdErrorCode.NotARepo, $"数据库不存在：{mySql.Message}", inner: mySql),
+            1049 => new BdException(BdErrorCode.NotBeadsDatabase, $"数据库不存在：{mySql.Message}", inner: mySql),
             1044 or 1045 => new BdException(BdErrorCode.InvalidArgument, $"Dolt 账号无权访问该库：{mySql.Message}", inner: mySql),
             2002 or 2003 or 2005 or 2006 => new BdException(BdErrorCode.Timeout, "无法连接 Dolt 服务器，请检查主机/端口/密码", inner: mySql),
             _ => new BdException(BdErrorCode.Unknown, $"Dolt 查询失败：{mySql.Message}", inner: mySql)

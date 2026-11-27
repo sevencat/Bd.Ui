@@ -16,7 +16,7 @@ public sealed partial class BeadWriteService
         ArgumentNullException.ThrowIfNull(request);
         if (string.IsNullOrWhiteSpace(request.Title))
         {
-            throw new BdCli.BdException(BdCli.BdErrorCode.InvalidArgument, "任务标题不能为空");
+            throw new BdException(BdErrorCode.InvalidArgument, "任务标题不能为空");
         }
 
         var id = await _store.CreateAsync(request, cancellationToken).ConfigureAwait(false);

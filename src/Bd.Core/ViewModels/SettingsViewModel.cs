@@ -31,9 +31,6 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<string> Themes { get; } = ["Dark", "Light"];
 
-    /// <summary>可选数据源；demo 由下方“演示模式”开关控制，不在此列表中。</summary>
-    public IReadOnlyList<string> Backends { get; } = [StorageBackends.Cli, StorageBackends.Dolt];
-
     public string ConfigPath => JsonAppConfigStore.DefaultFilePath();
 
     /// <summary>应用版本（来自程序集的 InformationalVersion，由 set-version.ps1 写入）。</summary>
@@ -42,12 +39,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string LogDirectory => FileLoggerOptions.DefaultDirectory();
 
     public event EventHandler? Applied;
-
-    [ObservableProperty]
-    private string _repoPath = string.Empty;
-
-    [ObservableProperty]
-    private string _bdBinaryPath = "bd";
 
     [ObservableProperty]
     private string _humanActor = string.Empty;
@@ -68,9 +59,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _demoMode;
 
     [ObservableProperty]
-    private string _selectedBackend = StorageBackends.Cli;
-
-    [ObservableProperty]
     private string _doltHost = DoltDefaults.Host;
 
     [ObservableProperty]
@@ -81,6 +69,12 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _doltDatabase = DoltDefaults.Database;
+
+    [ObservableProperty]
+    private bool _doltUseTls;
+
+    [ObservableProperty]
+    private bool _doltAggregateAll;
 
     [ObservableProperty]
     private string _doltStatus = string.Empty;
@@ -100,19 +94,18 @@ public sealed partial class SettingsViewModel : ObservableObject
         try
         {
             var config = _session.Config;
-            RepoPath = config.RepoPath ?? string.Empty;
-            BdBinaryPath = config.BdBinaryPath;
             HumanActor = config.HumanActor ?? string.Empty;
             HumanAllowlistText = string.Join(", ", config.HumanAllowlist);
             PollSeconds = config.PollSeconds;
             SelectedTheme = config.Theme;
             ReadOnly = config.ReadOnly;
             DemoMode = config.DemoMode;
-            SelectedBackend = config.StorageBackend == StorageBackends.Dolt ? StorageBackends.Dolt : StorageBackends.Cli;
             DoltHost = config.DoltHost;
             DoltPortText = config.DoltPort.ToString();
             DoltUser = config.DoltUser;
             DoltDatabase = config.DoltDatabase;
+            DoltUseTls = config.DoltUseTls;
+            DoltAggregateAll = config.DoltAggregateAll;
         }
         finally
         {
@@ -141,8 +134,6 @@ public sealed partial class SettingsViewModel : ObservableObject
             // 以当前配置为基础，避免未在界面上暴露的字段（日志上限等）被保存时重置。
             var config = _session.Config with
             {
-                RepoPath = string.IsNullOrWhiteSpace(RepoPath) ? null : RepoPath.Trim(),
-                BdBinaryPath = BdBinaryPath,
                 HumanActor = string.IsNullOrWhiteSpace(HumanActor) ? null : HumanActor.Trim(),
                 HumanAllowlist = HumanAllowlistText
                     .Split([',', '，', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
@@ -150,11 +141,12 @@ public sealed partial class SettingsViewModel : ObservableObject
                 Theme = SelectedTheme,
                 ReadOnly = ReadOnly,
                 DemoMode = DemoMode,
-                StorageBackend = SelectedBackend,
                 DoltHost = DoltHost,
                 DoltPort = doltPort,
                 DoltUser = DoltUser,
-                DoltDatabase = DoltDatabase
+                DoltDatabase = DoltDatabase,
+                DoltUseTls = DoltUseTls,
+                DoltAggregateAll = DoltAggregateAll
             };
 
             await _session.ApplyAsync(config, CancellationToken.None);
@@ -180,14 +172,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var report = await _doctor.CheckAsync(
-                string.IsNullOrWhiteSpace(RepoPath) ? null : RepoPath.Trim(),
-                CancellationToken.None);
+            var report = await _doctor.CheckAsync(CancellationToken.None);
             var lines = new List<string>
             {
                 $"状态：{(report.Ok ? "正常" : "异常")}",
-                $"bd 版本：{report.BdVersion}",
-                $"仓库：{report.RepoPath}",
+                $"beads 版本（库内记录）：{report.BdVersion}",
+                $"数据源：{report.RepoPath}",
                 $"schema：{report.SchemaVersion}",
                 $"摘要：{report.Summary}"
             };

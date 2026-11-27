@@ -5,7 +5,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Bd.Core.Abstractions;
-using Bd.Core.BdCli;
 using Bd.Core.Domain;
 using MySqlConnector;
 
@@ -727,7 +726,7 @@ public sealed partial class DoltStore
 
         if (string.IsNullOrWhiteSpace(prefix))
         {
-            throw new BdException(BdErrorCode.NotARepo, "当前数据库不是 beads 项目（缺少 issue_prefix）");
+            throw new BdException(BdErrorCode.NotBeadsDatabase, "当前数据库不是 beads 项目（缺少 issue_prefix）");
         }
 
         var normalizedPrefix = prefix.Trim();
