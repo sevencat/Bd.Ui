@@ -73,5 +73,3 @@
 
 sync:
     remote: "git+ssh://git@github.com/sevencat/Bd.Ui.git"
-export:
-    auto: true

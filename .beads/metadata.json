@@ -1,7 +1,10 @@
 {
   "database": "dolt",
   "backend": "dolt",
-  "dolt_mode": "embedded",
-  "dolt_database": "Bd_Ui",
-  "project_id": "204d0387-f18e-4877-beea-0c0bdea963af"
+  "dolt_mode": "server",
+  "dolt_server_host": "1.15.245.172",
+  "dolt_server_port": 7050,
+  "dolt_server_user": "nwms",
+  "dolt_database": "king_bdui",
+  "project_id": "7061573d-9fbf-48de-8475-cff17292c4e6"
 }
