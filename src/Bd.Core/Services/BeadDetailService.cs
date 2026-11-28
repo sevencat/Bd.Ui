@@ -22,6 +22,8 @@ public sealed record BeadDetail
 
     public IReadOnlyList<Comment> Comments { get; init; } = [];
 
+    public IReadOnlyList<BeadEvent> Events { get; init; } = [];
+
     public IReadOnlyList<Bead> Children { get; init; } = [];
 
     public EpicProgress Progress { get; init; } = new();
@@ -48,7 +50,8 @@ public sealed class BeadDetailService
         var beadTask = _store.GetAsync(id, cancellationToken);
         var dependenciesTask = _store.ListDependenciesAsync(id, cancellationToken);
         var commentsTask = _store.ListCommentsAsync(id, cancellationToken);
-        await Task.WhenAll(beadTask, dependenciesTask, commentsTask).ConfigureAwait(false);
+        var eventsTask = _store.ListEventsAsync(id, cancellationToken);
+        await Task.WhenAll(beadTask, dependenciesTask, commentsTask, eventsTask).ConfigureAwait(false);
 
         var bead = await beadTask.ConfigureAwait(false);
         var children = await LoadChildrenAsync(id, cancellationToken).ConfigureAwait(false);
@@ -59,6 +62,7 @@ public sealed class BeadDetailService
             Bead = bead,
             Dependencies = await dependenciesTask.ConfigureAwait(false),
             Comments = await commentsTask.ConfigureAwait(false),
+            Events = await eventsTask.ConfigureAwait(false),
             Children = children,
             Progress = progress,
             Attribution = _attribution.Resolve(bead.CreatedBy)

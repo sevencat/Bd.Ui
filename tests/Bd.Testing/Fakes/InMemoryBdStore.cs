@@ -10,6 +10,8 @@ public sealed class InMemoryBdStore : IBdStore
 
     public List<Comment> Comments { get; } = [];
 
+    public List<BeadEvent> Events { get; } = [];
+
     public List<string> Calls { get; } = [];
 
     public List<DependencyType> RecordedDependencyTypes { get; } = [];
@@ -24,6 +26,10 @@ public sealed class InMemoryBdStore : IBdStore
         if (!string.IsNullOrWhiteSpace(query.Status))
         {
             result = result.Where(bead => string.Equals(bead.StatusRaw, query.Status, StringComparison.OrdinalIgnoreCase));
+        }
+        else if (query.ExcludeClosed)
+        {
+            result = result.Where(bead => bead.Status != BeadStatus.Closed);
         }
 
         if (!string.IsNullOrWhiteSpace(query.Label))
@@ -73,6 +79,10 @@ public sealed class InMemoryBdStore : IBdStore
         Task.FromResult<IReadOnlyList<Comment>>(
             [.. Comments.Where(comment => string.Equals(comment.IssueId, id, StringComparison.OrdinalIgnoreCase))]);
 
+    public Task<IReadOnlyList<BeadEvent>> ListEventsAsync(string id, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<BeadEvent>>(
+            [.. Events.Where(item => string.Equals(item.IssueId, id, StringComparison.OrdinalIgnoreCase))]);
+
     public Task<string> GetVersionAsync(CancellationToken cancellationToken) => Task.FromResult("1.3.4");
 
     public Task<DoctorReport> RunDoctorAsync(CancellationToken cancellationToken) =>
@@ -113,7 +123,8 @@ public sealed class InMemoryBdStore : IBdStore
             Description = request.Description ?? current.Description,
             StatusRaw = request.Status ?? current.StatusRaw,
             PriorityValue = request.Priority ?? current.PriorityValue,
-            Owner = request.Assignee ?? current.Owner
+            // Owner 是创建者、Assignee 是当前负责人，与 beads 的 issues 表一致。
+            Assignee = request.Assignee ?? current.Assignee
         };
         return Task.CompletedTask;
     }
@@ -164,12 +175,23 @@ public sealed class InMemoryBdStore : IBdStore
     {
         Calls.Add($"dep+{type}");
         RecordedDependencyTypes.Add(type);
+
+        // 真实 bd 的依赖查询会 join 目标任务，回填标题与状态；这里保持一致。
+        var target = Beads.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id, dependsOnId, StringComparison.OrdinalIgnoreCase));
         return Mutate(id, bead => bead with
         {
             Dependencies =
             [
                 .. bead.Dependencies,
-                new DependencyLink { TargetId = dependsOnId, DependencyTypeRaw = BdEnumMaps.ToBdString(type) }
+                new DependencyLink
+                {
+                    TargetId = dependsOnId,
+                    Title = target?.Title,
+                    TargetStatusRaw = target?.StatusRaw,
+                    TargetTypeRaw = target?.TypeRaw,
+                    DependencyTypeRaw = BdEnumMaps.ToBdString(type)
+                }
             ]
         });
     }

@@ -51,6 +51,9 @@ public sealed class ReadOnlyGuard : IBdStore
     public Task<IReadOnlyList<Comment>> ListCommentsAsync(string id, CancellationToken cancellationToken) =>
         _inner.ListCommentsAsync(id, cancellationToken);
 
+    public Task<IReadOnlyList<BeadEvent>> ListEventsAsync(string id, CancellationToken cancellationToken) =>
+        _inner.ListEventsAsync(id, cancellationToken);
+
     public Task<string> GetVersionAsync(CancellationToken cancellationToken) =>
         _inner.GetVersionAsync(cancellationToken);
 

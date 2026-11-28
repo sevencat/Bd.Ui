@@ -16,7 +16,7 @@ public sealed partial class BoardViewModel : ObservableObject
     private bool _suspendTreeRefresh;
     private bool _restoringTree;
 
-    /// <summary>记住用户的展开/折叠选择，轮询重建树时不回退成默认状态。</summary>
+    /// <summary>记住用户的展开/折叠选择，刷新重建树时不回退成默认状态。</summary>
     private readonly Dictionary<string, bool> _expandState = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>父子链异常时的递归上限，防止栈溢出。</summary>
@@ -41,8 +41,6 @@ public sealed partial class BoardViewModel : ObservableObject
             new(BoardColumnKind.Blocked, "Blocked", "#E5484D"),
             new(BoardColumnKind.Done, "Done", "#8A8F98")
         ];
-
-        Filter.FilterChanged += OnFilterChanged;
     }
 
     public ObservableCollection<BoardColumnViewModel> Columns { get; }
@@ -53,21 +51,17 @@ public sealed partial class BoardViewModel : ObservableObject
     /// <summary>树状视图当前可见行：根节点按展开状态摊平后的顺序，供列表直接渲染。</summary>
     public ObservableCollection<BoardTreeNodeViewModel> TreeRows { get; } = [];
 
-    public FilterBarViewModel Filter { get; } = new();
-
     public BoardSnapshot Snapshot => _snapshot;
 
-    /// <summary>0 = 看板，1 = 树状。</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsBoardMode))]
-    [NotifyPropertyChangedFor(nameof(IsTreeMode))]
-    private int _viewIndex;
-
-    public bool IsBoardMode => ViewIndex == 0;
-
-    public bool IsTreeMode => ViewIndex == 1;
-
     public bool IsTreeEmpty => TreeRows.Count == 0;
+
+    /// <summary>当前选中任务的 ID（右侧详情显示的即是它）。</summary>
+    [ObservableProperty]
+    private string? _selectedId;
+
+    /// <summary>左树的选中行，与 ListBox.SelectedItem 双向绑定。</summary>
+    [ObservableProperty]
+    private BoardTreeNodeViewModel? _selectedRow;
 
     public event EventHandler? Updated;
 
@@ -90,6 +84,24 @@ public sealed partial class BoardViewModel : ObservableObject
     [ObservableProperty]
     private string _lastLoadedText = "尚未加载";
 
+    /// <summary>
+    /// 是否把已关闭（Closed）的任务也拉进看板与树。
+    /// 切换只改筛选条件，不会自动请求数据——必须由用户手动点「刷新」才生效，
+    /// 避免每次勾选都打一次远端全量查询。
+    /// </summary>
+    [ObservableProperty]
+    private bool _showClosed;
+
+    /// <summary>筛选范围已改但当前快照还是旧的，需要手动刷新才生效。</summary>
+    [ObservableProperty]
+    private bool _isStale;
+
+    /// <summary>请求外壳（Shell）执行一次完整刷新；刷新动作与状态栏由 Shell 统一负责。</summary>
+    public event EventHandler? RefreshRequested;
+
+    [RelayCommand]
+    public void RequestRefresh() => RefreshRequested?.Invoke(this, EventArgs.Empty);
+
     [RelayCommand]
     public Task RefreshAsync() => RefreshCoreAsync(CancellationToken.None, silent: false);
 
@@ -102,9 +114,10 @@ public sealed partial class BoardViewModel : ObservableObject
 
         try
         {
-            _snapshot = await _board.LoadAsync(Filter.ToFilter(), cancellationToken);
+            _snapshot = await _board.LoadAsync(ShowClosed, cancellationToken);
             Project();
             ErrorMessage = null;
+            IsStale = false;
             LastLoadedText = _snapshot.LoadedAt.ToLocalTime().ToString("HH:mm:ss");
             Updated?.Invoke(this, EventArgs.Empty);
         }
@@ -129,11 +142,61 @@ public sealed partial class BoardViewModel : ObservableObject
     [RelayCommand]
     public void Open(BeadCardViewModel? card)
     {
-        if (card is not null)
+        if (card is null)
         {
-            CardActivated?.Invoke(this, card.Id);
+            return;
+        }
+
+        var node = EnumerateNodes(TreeRoots).FirstOrDefault(candidate => candidate.Card == card);
+        if (node is not null)
+        {
+            Activate(node);
+            return;
+        }
+
+        CardActivated?.Invoke(this, card.Id);
+    }
+
+    /// <summary>选中树节点：只做单行高亮，不打开右侧详情（详情由双击触发）。</summary>
+    public void Select(BoardTreeNodeViewModel? node) => SelectedRow = node;
+
+    /// <summary>打开某个树节点的详情（双击树行时调用）。</summary>
+    public void Activate(BoardTreeNodeViewModel? node)
+    {
+        if (node is null)
+        {
+            return;
+        }
+
+        Select(node);
+        CardActivated?.Invoke(this, node.Id);
+    }
+
+    public void ClearSelection()
+    {
+        SelectedRow = null;
+        SelectedId = null;
+    }
+
+    /// <summary>重新建树后按 ID 还原高亮；还原不应重新打开详情（否则刷新会打断阅读）。</summary>
+    public void RestoreSelection(string? id)
+    {
+        var node = string.IsNullOrEmpty(id)
+            ? null
+            : EnumerateNodes(TreeRoots).FirstOrDefault(candidate => candidate.Id == id);
+
+        SelectedRow = node;
+        if (node is not null)
+        {
+            SelectedId = node.Id;
         }
     }
+
+    /// <summary>单击只更新选中高亮；右侧详情必须双击才会加载。</summary>
+    partial void OnSelectedRowChanged(BoardTreeNodeViewModel? value) => SelectedId = value?.Id;
+
+    /// <summary>切换筛选范围只标记「需要刷新」，真实数据仍等用户点刷新。</summary>
+    partial void OnShowClosedChanged(bool value) => IsStale = true;
 
     [RelayCommand]
     public void ExpandAll() => SetExpandedAll(true);
@@ -178,9 +241,6 @@ public sealed partial class BoardViewModel : ObservableObject
         }
     }
 
-    private void OnFilterChanged(object? sender, EventArgs e) =>
-        _ = RefreshCoreAsync(CancellationToken.None, silent: true);
-
     private void Project()
     {
         var now = _snapshot.LoadedAt;
@@ -209,6 +269,11 @@ public sealed partial class BoardViewModel : ObservableObject
             {
                 foreach (var bead in _snapshot.Column(column.Kind))
                 {
+                    if (!ShowClosed && bead.Status == BeadStatus.Closed)
+                    {
+                        continue;
+                    }
+
                     if (known.Add(Key(bead.Project, bead.Id)))
                     {
                         beads.Add(bead);
@@ -257,6 +322,7 @@ public sealed partial class BoardViewModel : ObservableObject
         }
 
         RefreshTreeRows();
+        RestoreSelection(SelectedId);
     }
 
     private BoardTreeNodeViewModel BuildNode(
@@ -275,6 +341,7 @@ public sealed partial class BoardViewModel : ObservableObject
         node.IsExpanded = _expandState.TryGetValue(key, out var expanded) ? expanded : depth == 0;
         if (depth >= MaxTreeDepth || !childrenOf.TryGetValue(key, out var children))
         {
+            node.UpdateRollup();
             return node;
         }
 
@@ -289,6 +356,7 @@ public sealed partial class BoardViewModel : ObservableObject
         }
 
         node.NotifyChildrenChanged();
+        node.UpdateRollup();
         return node;
     }
 

@@ -1,4 +1,5 @@
 using Bd.Core.Abstractions;
+
 using MySqlConnector;
 
 namespace Bd.Core.Dolt;
@@ -7,19 +8,24 @@ namespace Bd.Core.Dolt;
 public sealed record DoltConnectionProbe(bool Ok, string Message, string? ServerVersion = null);
 
 /// <summary>
-/// 构造到远程 Dolt sql-server 的连接。密码只来自环境变量
-/// <see cref="PasswordEnvironmentVariable"/>，绝不进入 config.json。
+/// 构造到远程 Dolt sql-server 的连接。密码优先取
+/// <see cref="DoltConnectionSettings.Password"/>（来自 config.json 或设置页），
+/// 为空时回退到环境变量 <see cref="PasswordEnvironmentVariable"/>。
 /// </summary>
 public sealed class DoltConnectionFactory
 {
     public const string PasswordEnvironmentVariable = "BEADS_DOLT_PASSWORD";
 
-    private readonly Func<string?> _readPassword;
+    private readonly Func<string?> _readEnvPassword;
 
     public DoltConnectionFactory(Func<string?>? readPassword = null) =>
-        _readPassword = readPassword ?? (static () => Environment.GetEnvironmentVariable(PasswordEnvironmentVariable));
+        _readEnvPassword = readPassword ?? (static () => Environment.GetEnvironmentVariable(PasswordEnvironmentVariable));
 
-    public bool HasPassword => !string.IsNullOrWhiteSpace(_readPassword());
+    /// <summary>环境变量里是否提供了密码（用于提示“配置为空时还能靠环境变量兜底”）。</summary>
+    public bool HasEnvironmentPassword => !string.IsNullOrWhiteSpace(_readEnvPassword());
+
+    public bool HasPassword(DoltConnectionSettings settings) =>
+        settings is not null && !string.IsNullOrWhiteSpace(ResolvePassword(settings));
 
     public MySqlConnection CreateConnection(DoltConnectionSettings settings) =>
         new(BuildConnectionString(settings));
@@ -28,12 +34,12 @@ public sealed class DoltConnectionFactory
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        var password = _readPassword();
+        var password = ResolvePassword(settings);
         if (string.IsNullOrWhiteSpace(password))
         {
             throw new BdException(
                 BdErrorCode.InvalidArgument,
-                $"未设置环境变量 {PasswordEnvironmentVariable}，无法连接远程 Dolt");
+                $"未配置 Dolt 密码：请在「设置」里填写，或设置环境变量 {PasswordEnvironmentVariable}");
         }
 
         var builder = new MySqlConnectionStringBuilder
@@ -86,5 +92,16 @@ public sealed class DoltConnectionFactory
         {
             return new DoltConnectionProbe(false, $"连接超时：{ex.Message}");
         }
+    }
+
+    private string? ResolvePassword(DoltConnectionSettings settings)
+    {
+        if (!string.IsNullOrWhiteSpace(settings.Password))
+        {
+            return settings.Password.Trim();
+        }
+
+        var env = _readEnvPassword();
+        return string.IsNullOrWhiteSpace(env) ? null : env.Trim();
     }
 }

@@ -1,5 +1,4 @@
 using Avalonia;
-using SimdSkia.Avalonia;
 
 namespace Bd.App;
 
@@ -11,12 +10,13 @@ internal static class Program
 
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<App>()
-            .UseStandardRuntimePlatformSubsystem()
             .UseWin32()
+            .UseSkia()
             .With(new Win32PlatformOptions
             {
-                RenderingMode = [Win32RenderingMode.Software]
+                RenderingMode = [Win32RenderingMode.AngleEgl],
             })
-            .UseSimdSkia(static options => SimdSkiaGpuOptions.UseGpuPreferred(options))
+            .UseHarfBuzz()
+            .WithInterFont()
             .LogToTrace();
 }

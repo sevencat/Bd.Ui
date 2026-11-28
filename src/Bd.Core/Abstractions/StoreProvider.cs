@@ -31,6 +31,9 @@ public sealed class StoreProvider : IBdStore
     public Task<IReadOnlyList<Domain.Comment>> ListCommentsAsync(string id, CancellationToken cancellationToken) =>
         Inner.ListCommentsAsync(id, cancellationToken);
 
+    public Task<IReadOnlyList<Domain.BeadEvent>> ListEventsAsync(string id, CancellationToken cancellationToken) =>
+        Inner.ListEventsAsync(id, cancellationToken);
+
     public Task<string> GetVersionAsync(CancellationToken cancellationToken) =>
         Inner.GetVersionAsync(cancellationToken);
 

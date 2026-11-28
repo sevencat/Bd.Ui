@@ -16,4 +16,15 @@ public partial class BeadDetailView : UserControl
             e.Handled = true;
         }
     }
+
+    /// <summary>评论框 Ctrl/Cmd+Enter 提交，与 web 界面保持一致。</summary>
+    private void OnCommentKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(KeyModifiers.Control)
+            && DataContext is BeadDetailViewModel vm)
+        {
+            vm.AddCommentCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
 }

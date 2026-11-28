@@ -11,21 +11,27 @@ namespace Bd.Core.Dolt;
 internal static class DoltSql
 {
     /// <summary>
-    /// issues 行 → Bead 的公共投影。计数口径与 <c>bd list --json</c> 对齐：
-    /// dependency_count / dependent_count 不统计 parent-child（父任务不算依赖），
-    /// parent 只取 parent-child 指向的一端。
+    /// issues 行 → Bead 的公共投影。parent 只取 parent-child 指向的一端。
+    /// 这里刻意不放 dependency_count / dependent_count / comment_count 三个逐行子查询：
+    /// Dolt 对相关子查询执行很慢（291 行库上每个约 +100~180ms），而界面并不展示这些计数，
+    /// 依赖明细已由 <see cref="BuildDependencyQuery"/> 单独批量取回。
     /// </summary>
     public const string BeadProjection = """
         i.id, i.title, i.description, i.status, i.priority, i.issue_type,
         i.owner, i.created_by, i.created_at, i.updated_at,
-        (SELECT COUNT(*) FROM dependencies d
-           WHERE d.issue_id = i.id AND d.type <> 'parent-child') AS dependency_count,
-        (SELECT COUNT(*) FROM dependencies d
-           WHERE d.depends_on_issue_id = i.id AND d.type <> 'parent-child') AS dependent_count,
-        (SELECT COUNT(*) FROM comments c WHERE c.issue_id = i.id) AS comment_count,
         (SELECT d.depends_on_issue_id FROM dependencies d
            WHERE d.issue_id = i.id AND d.type = 'parent-child'
            ORDER BY d.created_at LIMIT 1) AS parent_id
+        """;
+
+    /// <summary>
+    /// 详情页用投影：在公共投影上补充 design / acceptance_criteria / notes / close_reason / assignee
+    /// 与起止时间。只用于单条读取，列表/ready/blocked 视图保持轻量投影。
+    /// </summary>
+    public const string BeadDetailProjection = BeadProjection + """
+
+        , i.assignee, i.design, i.acceptance_criteria, i.notes, i.close_reason,
+        i.started_at, i.closed_at
         """;
 
     /// <summary>依赖边投影：target 可能指向 issues / wisps / 外部 ID。</summary>
@@ -53,6 +59,10 @@ internal static class DoltSql
         {
             conditions.Add("i.status = @status");
             parameters.Add(new MySqlParameter("@status", query.Status.Trim()));
+        }
+        else if (query.ExcludeClosed)
+        {
+            conditions.Add("i.status <> 'closed'");
         }
 
         if (!string.IsNullOrWhiteSpace(query.Type))
@@ -110,7 +120,7 @@ internal static class DoltSql
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         return (
-            $"SELECT {BeadProjection} FROM issues i WHERE i.id = @id LIMIT 1",
+            $"SELECT {BeadDetailProjection} FROM issues i WHERE i.id = @id LIMIT 1",
             [new MySqlParameter("@id", id.Trim())]);
     }
 
@@ -143,6 +153,21 @@ internal static class DoltSql
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         return (
             $"SELECT {CommentProjection} FROM comments c WHERE c.issue_id = @id ORDER BY c.created_at, c.id",
+            [new MySqlParameter("@id", id.Trim())]);
+    }
+
+    /// <summary>变更历史：最新优先，供详情页「CHANGE HISTORY」区块使用。</summary>
+    public static (string Sql, IReadOnlyList<MySqlParameter> Parameters) BuildEventQuery(string id)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        return (
+            """
+            SELECT e.event_type, e.actor, e.old_value, e.new_value, e.comment, e.created_at
+            FROM events e
+            WHERE e.issue_id = @id
+            ORDER BY e.created_at DESC
+            LIMIT 100
+            """,
             [new MySqlParameter("@id", id.Trim())]);
     }
 

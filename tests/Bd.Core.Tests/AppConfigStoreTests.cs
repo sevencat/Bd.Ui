@@ -17,7 +17,7 @@ public sealed class AppConfigStoreTests : IDisposable
 
         var config = await store.LoadAsync(CancellationToken.None);
 
-        config.PollInterval.Should().Be(TimeSpan.FromSeconds(5));
+        config.Theme.Should().Be("Dark");
     }
 
     [Fact]
@@ -28,7 +28,6 @@ public sealed class AppConfigStoreTests : IDisposable
         {
             DoltDatabase = "  beads_db  ",
             HumanActor = "sevencat",
-            PollSeconds = 0,
             Theme = " ",
             HumanAllowlist = [" alice ", "alice", ""]
         };
@@ -37,7 +36,6 @@ public sealed class AppConfigStoreTests : IDisposable
         var loaded = await store.LoadAsync(CancellationToken.None);
 
         loaded.DoltDatabase.Should().Be("beads_db");
-        loaded.PollSeconds.Should().Be(1);
         loaded.Theme.Should().Be("Dark");
         loaded.HumanAllowlist.Should().Equal("alice");
     }

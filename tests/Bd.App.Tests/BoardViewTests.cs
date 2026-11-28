@@ -1,4 +1,6 @@
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using Bd.App.Views;
 using Bd.Core.Config;
 using Bd.Core.Services;
@@ -12,7 +14,7 @@ namespace Bd.App.Tests;
 public sealed class BoardViewTests
 {
     [AvaloniaFact]
-    public async Task 看板渲染五列并显示卡片标题()
+    public async Task 树视图只渲染未关闭任务()
     {
         var store = new InMemoryBdStore();
         store.Beads.Add(TestScene.Bead("b1", "登录页打磨"));
@@ -27,19 +29,45 @@ public sealed class BoardViewTests
 
         await vm.RefreshAsync();
 
-        vm.Columns.Should().HaveCount(5);
-        vm.TotalCount.Should().Be(2);
+        vm.TotalCount.Should().Be(1);
 
         var window = TestScene.Show(new BoardView { DataContext = vm });
         var texts = window.Texts();
 
         texts.Should().Contain("登录页打磨");
-        texts.Should().Contain("已完成的活");
+        texts.Should().NotContain("已完成的活");
         window.Close();
     }
 
     [AvaloniaFact]
-    public async Task 树状视图渲染父子层级并可折叠()
+    public async Task 树面板上的刷新按钮把请求转给外壳()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.Add(TestScene.Bead("b1", "任务"));
+
+        var vm = new BoardViewModel(
+            new BoardService(store),
+            new BeadWriteService(store),
+            new AttributionService(AppConfig.Default),
+            new ToastService());
+
+        await vm.RefreshAsync();
+
+        var raised = 0;
+        vm.RefreshRequested += (_, _) => raised++;
+
+        var window = TestScene.Show(new BoardView { DataContext = vm });
+        var button = window.GetVisualDescendants().OfType<Button>()
+            .First(item => item.Content as string == "刷新");
+
+        button.Command!.Execute(button.CommandParameter);
+
+        raised.Should().Be(1);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task 树视图渲染父子层级并可折叠()
     {
         var store = new InMemoryBdStore();
         store.Beads.Add(TestScene.Bead("p1", "父任务"));
@@ -52,7 +80,6 @@ public sealed class BoardViewTests
             new ToastService());
 
         await vm.RefreshAsync();
-        vm.ViewIndex = 1;
 
         var window = TestScene.Show(new BoardView { DataContext = vm });
         var texts = window.Texts();
@@ -68,31 +95,6 @@ public sealed class BoardViewTests
         vm.TreeRoots[0].ToggleCommand.Execute(null);
         TestScene.Relayout(window);
         window.Texts().Should().Contain("子任务");
-        window.Close();
-    }
-
-    [AvaloniaFact]
-    public async Task 过滤后只渲染命中的卡片()
-    {
-        var store = new InMemoryBdStore();
-        store.Beads.Add(TestScene.Bead("b1", "登录页打磨"));
-        store.Beads.Add(TestScene.Bead("b2", "依赖图渲染"));
-
-        var vm = new BoardViewModel(
-            new BoardService(store),
-            new BeadWriteService(store),
-            new AttributionService(AppConfig.Default),
-            new ToastService());
-
-        await vm.RefreshAsync();
-        vm.Filter.SearchText = "依赖图";
-        await vm.RefreshCoreAsync(CancellationToken.None, silent: true);
-
-        var window = TestScene.Show(new BoardView { DataContext = vm });
-        var texts = window.Texts();
-
-        texts.Should().Contain("依赖图渲染");
-        texts.Should().NotContain("登录页打磨");
         window.Close();
     }
 }

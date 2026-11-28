@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
-using Avalonia.Themes.Fluent;
+using Avalonia.Themes.Fluent2;
 using Bd.App.Tests;
 
 [assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]
@@ -22,7 +22,7 @@ public sealed class TestApplication : Application
 {
     public override void Initialize()
     {
-        Styles.Add(new FluentTheme());
+        Styles.Add(new Fluent2Theme());
 
         if (AvaloniaXamlLoader.Load(new Uri("avares://Bd.Ui/Styles/Tokens.axaml")) is ResourceDictionary tokens)
         {

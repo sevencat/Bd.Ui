@@ -23,17 +23,17 @@
 
   <Style Selector="TextBlock.muted">
     <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="13" />
   </Style>
 
   <Style Selector="TextBlock.tiny">
     <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="12" />
   </Style>
 
   <Style Selector="TextBlock.tag">
     <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="12" />
     <Setter Property="Background" Value="{DynamicResource PanelAltBackground}" />
     <Setter Property="Padding" Value="6,2" />
   </Style>
@@ -117,6 +117,50 @@
 
   <Style Selector="ListBoxItem:selected">
     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <!-- 详情面板的分区标题：小号、加粗、字距略宽。 -->
+  <Style Selector="TextBlock.section">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="LetterSpacing" Value="0.6" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+  </Style>
+
+  <!-- 详情/评论里的长正文：13px 字配 21px 行高，多行文字不会糊成一团。 -->
+  <Style Selector="SelectableTextBlock.body">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="LineHeight" Value="21" />
+    <!-- 正文用主文字色，比次级灰更黑、更易读。 -->
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+  </Style>
+
+  <!-- 依赖区状态徽标：默认中性色，按任务状态换色（配合 Classes.closed 等布尔类）。 -->
+  <Style Selector="TextBlock.depstatus">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+  </Style>
+
+  <Style Selector="TextBlock.depstatus.closed">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+  </Style>
+
+  <Style Selector="TextBlock.depstatus.inprogress">
+    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.depstatus.blocked">
+    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+  </Style>
+
+  <!-- 任务树：紧凑单行，悬停/选中用底色区分。 -->
+  <Style Selector="ListBox.rows ListBoxItem">
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="MinHeight" Value="28" />
+  </Style>
+
+  <Style Selector="ListBox.rows ListBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource HoverBackground}" />
   </Style>
 
   <Style Selector="ProgressBar">

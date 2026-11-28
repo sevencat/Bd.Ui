@@ -3,6 +3,7 @@
              xmlns:vm="using:Bd.Core.ViewModels"
              xmlns:views="using:Bd.App.Views"
              xmlns:conv="using:Bd.App.Converters"
+             xmlns:fluent2="using:Avalonia.Themes.Fluent2"
              x:Class="Bd.App.App"
              RequestedThemeVariant="Dark">
   <Application.Resources>
@@ -15,7 +16,7 @@
   </Application.Resources>
 
   <Application.Styles>
-    <FluentTheme />
+    <fluent2:Fluent2Theme />
     <StyleInclude Source="avares://Bd.Ui/Styles/Controls.axaml" />
   </Application.Styles>
 

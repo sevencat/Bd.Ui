@@ -2,8 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Styling;
-using Avalonia.Threading;
-using Avalonia.VisualTree;
 using Bd.Core.ViewModels;
 
 namespace Bd.App.Views;
@@ -38,20 +36,8 @@ public partial class MainWindow : Window
                 _shell.RefreshCommand.Execute(null);
                 e.Handled = true;
                 break;
-            case Key.F when ctrl:
-                FocusSearch();
-                e.Handled = true;
-                break;
-            case Key.D1 when ctrl:
-                _shell.Navigate("board");
-                e.Handled = true;
-                break;
-            case Key.D2 when ctrl:
-                _shell.Navigate("epics");
-                e.Handled = true;
-                break;
-            case Key.D3 when ctrl:
-                _shell.Navigate("settings");
+            case Key.OemComma when ctrl:
+                _ = ShowSettingsDialogAsync();
                 e.Handled = true;
                 break;
             case Key.Escape:
@@ -67,6 +53,7 @@ public partial class MainWindow : Window
         {
             _shell.ThemeChanged -= OnThemeChanged;
             _shell.CreateRequested -= OnCreateRequested;
+            _shell.SettingsRequested -= OnSettingsRequested;
         }
 
         _shell = DataContext as ShellViewModel;
@@ -74,6 +61,7 @@ public partial class MainWindow : Window
         {
             _shell.ThemeChanged += OnThemeChanged;
             _shell.CreateRequested += OnCreateRequested;
+            _shell.SettingsRequested += OnSettingsRequested;
         }
     }
 
@@ -81,6 +69,8 @@ public partial class MainWindow : Window
         _ = ShowEditorAsync();
 
     private void OnCreateRequested(object? sender, EventArgs e) => _ = ShowEditorAsync();
+
+    private void OnSettingsRequested(object? sender, EventArgs e) => _ = ShowSettingsDialogAsync();
 
     private void OnThemeChanged(object? sender, string theme) => ApplyTheme(theme);
 
@@ -106,15 +96,14 @@ public partial class MainWindow : Window
         await dialog.ShowDialog<string?>(this);
     }
 
-    private void FocusSearch()
+    private async Task ShowSettingsDialogAsync()
     {
         if (_shell is null)
         {
             return;
         }
 
-        _shell.Navigate("board");
-        Dispatcher.UIThread.Post(() =>
-            this.GetVisualDescendants().OfType<BoardView>().FirstOrDefault()?.FocusSearch());
+        var dialog = new SettingsDialog { DataContext = _shell.Settings };
+        await dialog.ShowDialog(this);
     }
 }

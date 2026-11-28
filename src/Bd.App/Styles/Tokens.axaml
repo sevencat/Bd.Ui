@@ -29,8 +29,9 @@
       <SolidColorBrush x:Key="HoverBackground" Color="#E2E9F3" />
       <SolidColorBrush x:Key="BorderBrushSoft" Color="#D5DCE7" />
       <SolidColorBrush x:Key="TextPrimary" Color="#18202B" />
-      <SolidColorBrush x:Key="TextSecondary" Color="#4E5A6A" />
-      <SolidColorBrush x:Key="TextMuted" Color="#7C8798" />
+      <!-- 次级/弱化文字整体加深，浅色主题下更清晰。 -->
+      <SolidColorBrush x:Key="TextSecondary" Color="#39424F" />
+      <SolidColorBrush x:Key="TextMuted" Color="#5F6B7A" />
       <SolidColorBrush x:Key="AccentBrush" Color="#2F6FDE" />
       <SolidColorBrush x:Key="AccentSoft" Color="#DCE8FB" />
       <SolidColorBrush x:Key="SuccessBrush" Color="#1F9254" />

@@ -12,7 +12,7 @@
         <StackPanel Spacing="12">
           <TextBlock Text="远程 Dolt" Classes="h2" />
           <TextBlock Classes="tiny" TextWrapping="Wrap"
-                     Text="应用只通过 MySQL 协议连接 Dolt 服务器读写，不调用 bd 命令行。密码从环境变量 BEADS_DOLT_PASSWORD 读取，不写入配置文件；一个数据库即一个项目。" />
+                     Text="应用只通过 MySQL 协议连接 Dolt 服务器读写，不调用 bd 命令行。密码保存在 config.json（明文），留空则改用环境变量 BEADS_DOLT_PASSWORD；一个数据库即一个项目。" />
           <Grid ColumnDefinitions="*,140" ColumnSpacing="8">
             <StackPanel Spacing="4">
               <TextBlock Text="主机" Classes="muted" />
@@ -29,10 +29,15 @@
               <TextBox Text="{Binding DoltUser, Mode=TwoWay}" PlaceholderText="nwms" />
             </StackPanel>
             <StackPanel Grid.Column="1" Spacing="4">
-              <TextBlock Text="数据库（项目）" Classes="muted" />
-              <TextBox Text="{Binding DoltDatabase, Mode=TwoWay}" PlaceholderText="king_bdui" />
+              <TextBlock Text="密码" Classes="muted" />
+              <TextBox Text="{Binding DoltPassword, Mode=TwoWay}" PasswordChar="●"
+                       PlaceholderText="留空则读取 BEADS_DOLT_PASSWORD" />
             </StackPanel>
           </Grid>
+          <StackPanel Spacing="4">
+            <TextBlock Text="数据库（项目）" Classes="muted" />
+            <TextBox Text="{Binding DoltDatabase, Mode=TwoWay}" PlaceholderText="king_bdui" />
+          </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="测试连接" Command="{Binding TestDoltConnectionCommand}" />
             <TextBlock Text="{Binding DoltStatus}" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" />
@@ -47,7 +52,7 @@
 
       <Border Classes="panel" Padding="16">
         <StackPanel Spacing="12">
-          <TextBlock Text="界面与刷新" Classes="h2" />
+          <TextBlock Text="界面" Classes="h2" />
           <StackPanel Orientation="Horizontal" Spacing="10">
             <TextBlock Text="主题" Classes="muted" VerticalAlignment="Center" />
             <ComboBox Width="140" ItemsSource="{Binding Themes}"
@@ -57,13 +62,8 @@
           <CheckBox Content="演示模式（内置示例数据，不连接 Dolt）" IsChecked="{Binding DemoMode, Mode=TwoWay}" />
           <TextBlock Classes="tiny" TextWrapping="Wrap"
                      Text="勾选演示模式后忽略上面的 Dolt 连接设置，仅用于离线预览界面；取消勾选即恢复连接真实库。" />
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <TextBlock Text="轮询间隔" Classes="muted" VerticalAlignment="Center" />
-            <Slider Width="220" Minimum="1" Maximum="60" TickFrequency="1"
-                    Value="{Binding PollSeconds, Mode=TwoWay}" />
-            <TextBlock VerticalAlignment="Center"
-                       Text="{Binding PollSeconds, StringFormat='{}{0:0} 秒'}" />
-          </StackPanel>
+          <TextBlock Classes="tiny" TextWrapping="Wrap"
+                     Text="不自动刷新：看板只在点击「刷新」、写操作完成或保存设置后重新读取 Dolt。" />
         </StackPanel>
       </Border>
 

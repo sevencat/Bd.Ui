@@ -68,7 +68,7 @@ public static class DemoDataProvider
             {
                 Id = "demo-ui",
                 Title = "完成设置界面校验",
-                Description = "Dolt 连接参数与轮询间隔需要即时校验并给出可操作提示。",
+                Description = "Dolt 连接参数与主题需要在保存时即时校验并给出可操作提示。",
                 StatusRaw = "open",
                 PriorityValue = 2,
                 TypeRaw = "task",
@@ -288,6 +288,10 @@ public static class DemoDataProvider
             if (!string.IsNullOrWhiteSpace(query.Status))
             {
                 result = result.Where(bead => string.Equals(bead.StatusRaw, query.Status, StringComparison.OrdinalIgnoreCase));
+            }
+            else if (query.ExcludeClosed)
+            {
+                result = result.Where(bead => bead.Status != BeadStatus.Closed);
             }
 
             if (!string.IsNullOrWhiteSpace(query.Type))

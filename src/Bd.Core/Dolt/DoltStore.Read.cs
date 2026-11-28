@@ -74,6 +74,31 @@ public sealed partial class DoltStore
         }
     }
 
+    public async Task<IReadOnlyList<BeadEvent>> ListEventsAsync(string id, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+
+        var (sql, parameters) = DoltSql.BuildEventQuery(id);
+        try
+        {
+            await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
+            await using var command = CreateCommand(connection, sql, parameters);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
+            var events = new List<BeadEvent>();
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                events.Add(MapEvent(reader) with { IssueId = id });
+            }
+
+            return events;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw Translate(ex);
+        }
+    }
+
     public async Task<string> GetVersionAsync(CancellationToken cancellationToken)
     {
         try

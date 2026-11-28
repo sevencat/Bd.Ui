@@ -17,12 +17,12 @@ public sealed class DemoModeTests : IDisposable
     {
         var store = DemoDataProvider.CreateStore();
 
-        var snapshot = await new BoardService(store).LoadAsync(null, CancellationToken.None);
+        var snapshot = await new BoardService(store).LoadAsync(CancellationToken.None);
         snapshot.Backlog.Should().NotBeEmpty("deferred 任务进入 Backlog");
         snapshot.Ready.Should().NotBeEmpty();
         snapshot.InProgress.Should().NotBeEmpty();
         snapshot.Blocked.Should().NotBeEmpty();
-        snapshot.Done.Should().NotBeEmpty();
+        snapshot.Done.Should().BeEmpty("看板只加载未关闭任务");
 
         var epics = await new EpicProgressService(store).LoadAsync(includeEmpty: false, CancellationToken.None);
         var epic = epics.Should().ContainSingle(item => item.Epic.Id == "demo-epic").Which;

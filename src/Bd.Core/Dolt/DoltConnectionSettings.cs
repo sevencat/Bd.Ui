@@ -3,8 +3,8 @@ using Bd.Core.Config;
 namespace Bd.Core.Dolt;
 
 /// <summary>
-/// 远程 Dolt（MySQL 协议）连接参数。密码不在这里，运行时由
-/// <see cref="DoltConnectionFactory"/> 从环境变量读取，避免落盘。
+/// 远程 Dolt（MySQL 协议）连接参数。密码可直接给出；为空时由
+/// <see cref="DoltConnectionFactory"/> 回退到环境变量 <c>BEADS_DOLT_PASSWORD</c>。
 /// </summary>
 public sealed record DoltConnectionSettings
 {
@@ -13,6 +13,9 @@ public sealed record DoltConnectionSettings
     public int Port { get; init; } = DoltDefaults.Port;
 
     public required string User { get; init; }
+
+    /// <summary>连接密码；为空表示交给环境变量。</summary>
+    public string? Password { get; init; }
 
     /// <summary>项目对应的数据库名（一个 database 即一个 beads 项目）。</summary>
     public required string Database { get; init; }
@@ -30,6 +33,7 @@ public sealed record DoltConnectionSettings
             Host = config.DoltHost,
             Port = config.DoltPort,
             User = config.DoltUser,
+            Password = config.DoltPassword,
             Database = config.DoltDatabase,
             UseTls = config.DoltUseTls,
             Actor = string.IsNullOrWhiteSpace(config.HumanActor) ? null : config.HumanActor.Trim()

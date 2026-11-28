@@ -1,4 +1,5 @@
 using Bd.Core.Abstractions;
+using Bd.Core.Config;
 using Bd.Core.Dolt;
 using FluentAssertions;
 using MySqlConnector;
@@ -32,7 +33,31 @@ public sealed class DoltConnectionFactoryTests
     }
 
     [Fact]
-    public void Missing_password_is_reported_with_environment_variable_name()
+    public void Configured_password_wins_over_environment_variable()
+    {
+        var factory = new DoltConnectionFactory(() => "from-env");
+
+        var builder = new MySqlConnectionStringBuilder(
+            factory.BuildConnectionString(Settings with { Password = "from-config" }));
+
+        builder.Password.Should().Be("from-config");
+        factory.HasPassword(Settings with { Password = "from-config" }).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Blank_configured_password_falls_back_to_environment()
+    {
+        var factory = new DoltConnectionFactory(() => "from-env");
+
+        var builder = new MySqlConnectionStringBuilder(
+            factory.BuildConnectionString(Settings with { Password = "  " }));
+
+        builder.Password.Should().Be("from-env");
+        factory.HasEnvironmentPassword.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Missing_password_is_reported_with_configuration_hint()
     {
         var factory = new DoltConnectionFactory(static () => null);
 
@@ -40,7 +65,8 @@ public sealed class DoltConnectionFactoryTests
 
         act.Should().Throw<BdException>()
             .Which.Code.Should().Be(BdErrorCode.InvalidArgument);
-        factory.HasPassword.Should().BeFalse();
+        factory.HasPassword(Settings).Should().BeFalse();
+        factory.HasEnvironmentPassword.Should().BeFalse();
     }
 
     [Fact]
@@ -57,15 +83,17 @@ public sealed class DoltConnectionFactoryTests
     [Fact]
     public void Config_snapshot_maps_to_settings()
     {
-        var settings = DoltConnectionSettings.FromConfig(new Bd.Core.Config.AppConfig
+        var settings = DoltConnectionSettings.FromConfig(new AppConfig
         {
             DoltHost = "1.15.245.172",
             DoltPort = 7050,
             DoltUser = "nwms",
+            DoltPassword = "p@ss",
             DoltDatabase = "king_fh2sharp"
         });
 
         settings.Describe().Should().Be("nwms@1.15.245.172:7050/king_fh2sharp");
+        settings.Password.Should().Be("p@ss");
         settings.WithDatabase("king_bdui").Database.Should().Be("king_bdui");
     }
 }

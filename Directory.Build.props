@@ -8,8 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <AvaloniaVersion>12.1.6</AvaloniaVersion>
-    <SimdAioVersion>12.1.6.2</SimdAioVersion>
+    <AvaloniaVersion>12.2.0</AvaloniaVersion>
+    <Win64AioVersion>12.2.0.1</Win64AioVersion>
     <ExtensionsVersion>10.0.0</ExtensionsVersion>
     <MvvmVersion>8.4.2</MvvmVersion>
     <MySqlConnectorVersion>2.6.2</MySqlConnectorVersion>

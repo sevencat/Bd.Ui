@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Bd.Core.Config;
 
 public sealed record AppConfig
@@ -7,8 +5,6 @@ public sealed record AppConfig
     public string? HumanActor { get; init; }
 
     public IReadOnlyList<string> HumanAllowlist { get; init; } = [];
-
-    public int PollSeconds { get; init; } = 5;
 
     public string Theme { get; init; } = "Dark";
 
@@ -30,6 +26,12 @@ public sealed record AppConfig
 
     public string DoltUser { get; init; } = DoltDefaults.User;
 
+    /// <summary>
+    /// 连接密码（明文存于 config.json）；非空时优先于环境变量
+    /// <c>BEADS_DOLT_PASSWORD</c>，显式留空则回退到环境变量。
+    /// </summary>
+    public string? DoltPassword { get; init; } = DoltDefaults.Password;
+
     /// <summary>当前项目对应的数据库名（一个 database 即一个项目）。</summary>
     public string DoltDatabase { get; init; } = DoltDefaults.Database;
 
@@ -40,9 +42,6 @@ public sealed record AppConfig
     public bool DoltAggregateAll { get; init; }
 
     public static AppConfig Default { get; } = new();
-
-    [JsonIgnore]
-    public TimeSpan PollInterval => TimeSpan.FromSeconds(Math.Clamp(PollSeconds, 1, 300));
 
     public bool IsHuman(string? actor, IReadOnlyList<string> extraAllowlist)
     {
@@ -65,22 +64,28 @@ public sealed record AppConfig
 
     public AppConfig Normalize() => this with
     {
-        PollSeconds = Math.Clamp(PollSeconds, 1, 300),
         LogMaxFileSizeKb = Math.Clamp(LogMaxFileSizeKb, 64, 102_400),
         LogRetentionDays = Math.Clamp(LogRetentionDays, 1, 365),
         Theme = string.IsNullOrWhiteSpace(Theme) ? "Dark" : Theme,
         DoltHost = string.IsNullOrWhiteSpace(DoltHost) ? DoltDefaults.Host : DoltHost.Trim(),
         DoltPort = Math.Clamp(DoltPort, 1, 65_535),
         DoltUser = string.IsNullOrWhiteSpace(DoltUser) ? DoltDefaults.User : DoltUser.Trim(),
+        DoltPassword = NormalizePassword(DoltPassword),
         DoltDatabase = string.IsNullOrWhiteSpace(DoltDatabase) ? DoltDefaults.Database : DoltDatabase.Trim(),
         HumanAllowlist = [.. HumanAllowlist
             .Where(static value => !string.IsNullOrWhiteSpace(value))
             .Select(static value => value.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)]
     };
+
+    /// <summary>
+    /// 字段缺失（null）时回退默认口令；显式留空表示“改用环境变量”，因此保留空串。
+    /// </summary>
+    private static string NormalizePassword(string? password) =>
+        password is null ? DoltDefaults.Password : password.Trim();
 }
 
-/// <summary>团队共享 Dolt 服务器的默认连接参数；密码只从环境变量读取。</summary>
+/// <summary>团队共享 Dolt 服务器的默认连接参数；密码可被 config.json 或环境变量覆盖。</summary>
 public static class DoltDefaults
 {
     public const string Host = "1.15.245.172";
@@ -88,6 +93,8 @@ public static class DoltDefaults
     public const int Port = 7050;
 
     public const string User = "nwms";
+
+    public const string Password = "123478@!@56";
 
     public const string Database = "king_bdui";
 }

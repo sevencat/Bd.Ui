@@ -47,9 +47,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     private string _humanAllowlistText = string.Empty;
 
     [ObservableProperty]
-    private double _pollSeconds = 5;
-
-    [ObservableProperty]
     private string _selectedTheme = "Dark";
 
     [ObservableProperty]
@@ -66,6 +63,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _doltUser = DoltDefaults.User;
+
+    [ObservableProperty]
+    private string _doltPassword = DoltDefaults.Password;
 
     [ObservableProperty]
     private string _doltDatabase = DoltDefaults.Database;
@@ -96,13 +96,13 @@ public sealed partial class SettingsViewModel : ObservableObject
             var config = _session.Config;
             HumanActor = config.HumanActor ?? string.Empty;
             HumanAllowlistText = string.Join(", ", config.HumanAllowlist);
-            PollSeconds = config.PollSeconds;
             SelectedTheme = config.Theme;
             ReadOnly = config.ReadOnly;
             DemoMode = config.DemoMode;
             DoltHost = config.DoltHost;
             DoltPortText = config.DoltPort.ToString();
             DoltUser = config.DoltUser;
+            DoltPassword = config.DoltPassword ?? string.Empty;
             DoltDatabase = config.DoltDatabase;
             DoltUseTls = config.DoltUseTls;
             DoltAggregateAll = config.DoltAggregateAll;
@@ -137,13 +137,13 @@ public sealed partial class SettingsViewModel : ObservableObject
                 HumanActor = string.IsNullOrWhiteSpace(HumanActor) ? null : HumanActor.Trim(),
                 HumanAllowlist = HumanAllowlistText
                     .Split([',', '，', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-                PollSeconds = (int)Math.Round(PollSeconds),
                 Theme = SelectedTheme,
                 ReadOnly = ReadOnly,
                 DemoMode = DemoMode,
                 DoltHost = DoltHost,
                 DoltPort = doltPort,
                 DoltUser = DoltUser,
+                DoltPassword = DoltPassword,
                 DoltDatabase = DoltDatabase,
                 DoltUseTls = DoltUseTls,
                 DoltAggregateAll = DoltAggregateAll
@@ -239,8 +239,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         Host = string.IsNullOrWhiteSpace(DoltHost) ? DoltDefaults.Host : DoltHost.Trim(),
         Port = TryParseDoltPort(out var port) ? port : DoltDefaults.Port,
         User = string.IsNullOrWhiteSpace(DoltUser) ? DoltDefaults.User : DoltUser.Trim(),
+        // 留空表示交给环境变量 BEADS_DOLT_PASSWORD。
+        Password = string.IsNullOrWhiteSpace(DoltPassword) ? null : DoltPassword.Trim(),
         Database = string.IsNullOrWhiteSpace(DoltDatabase) ? DoltDefaults.Database : DoltDatabase.Trim(),
-        UseTls = _session.Config.DoltUseTls
+        UseTls = DoltUseTls
     };
 
     private bool TryParseDoltPort(out int port) =>

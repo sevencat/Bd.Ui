@@ -21,12 +21,9 @@ public sealed class EpicProgressService
 
     public async Task<IReadOnlyList<EpicProgressItem>> LoadAsync(bool includeEmpty, CancellationToken cancellationToken)
     {
-        var activeTask = _store.ListAsync(new BeadListQuery(), cancellationToken);
-        var closedTask = _store.ListAsync(new BeadListQuery { Status = "closed" }, cancellationToken);
-        await Task.WhenAll(activeTask, closedTask).ConfigureAwait(false);
-
-        var all = (await activeTask.ConfigureAwait(false))
-            .Concat(await closedTask.ConfigureAwait(false))
+        // Epic 进度要统计 closed 子任务，所以这里必须取全量；一次查询已包含 closed，
+        // 不需要再单独拉一遍 closed 快照。
+        var all = (await _store.ListAsync(new BeadListQuery(), cancellationToken).ConfigureAwait(false))
             .GroupBy(static bead => bead.Id, StringComparer.Ordinal)
             .Select(static group => group.First())
             .ToList();

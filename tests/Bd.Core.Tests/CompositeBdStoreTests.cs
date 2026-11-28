@@ -1,7 +1,6 @@
 using Bd.Core.Abstractions;
 using Bd.Core.Dolt;
 using Bd.Core.Domain;
-using Bd.Core.Filters;
 using Bd.Core.Services;
 using Bd.Testing.Fakes;
 using FluentAssertions;
@@ -40,7 +39,7 @@ public sealed class CompositeBdStoreTests
         var fh2 = Store(("X-1", "同名 ID"));
         var store = Create(("king_bdui", bdui), ("king_fh2sharp", fh2));
 
-        var snapshot = await new BoardService(store).LoadAsync(new BoardFilter(), CancellationToken.None);
+        var snapshot = await new BoardService(store).LoadAsync(CancellationToken.None);
 
         snapshot.Total.Should().Be(2);
         snapshot.Ready.Select(static bead => bead.Project).Should().BeEquivalentTo(["king_bdui", "king_fh2sharp"]);

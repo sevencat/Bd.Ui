@@ -10,8 +10,8 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <!-- Windows 可执行文件图标，取自 beads 官方 logo（Assets/beads.svg，脚本 scripts/make-icon.ps1 生成） -->
     <ApplicationIcon>Assets\beads.ico</ApplicationIcon>
-    <!-- 只对发布生效：去掉已被 ilrepack 合并进 Avalonia.SimdAio 的 OpenGL/Metal/Vulkan/MicroCom 拷贝项 -->
-    <AvaloniaSimdAioTrimMergedBackends>true</AvaloniaSimdAioTrimMergedBackends>
+    <!-- 只对发布生效：去掉已被 ilrepack 合并进 Avalonia.Win64Aio 的 OpenGL/Metal/Vulkan/MicroCom 拷贝项 -->
+    <AvaloniaWin64AioTrimMergedBackends>true</AvaloniaWin64AioTrimMergedBackends>
   </PropertyGroup>
 
   <!-- 发布配置：win-x64 自包含单文件，不裁剪 Avalonia 的 XAML 资源与反射路径 -->
@@ -27,10 +27,11 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
-    <PackageReference Include="Sevencat.Avalonia.SimdAIO" Version="$(SimdAioVersion)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(ExtensionsVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="$(ExtensionsVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="$(ExtensionsVersion)" />
+    <!-- App 只用 ILogger 接口与 LogInformation 等扩展方法（都在 Abstractions 里），
+         不用 AddLogging/AddDebug，所以不需要 Microsoft.Extensions.Logging / .Logging.Debug。 -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(ExtensionsVersion)" />
+    <PackageReference Include="Sevencat.Avalonia.Win64Aio" Version="$(Win64AioVersion)" />
   </ItemGroup>
 
   <ItemGroup>

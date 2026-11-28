@@ -1,7 +1,6 @@
 using Bd.Core.Abstractions;
 using Bd.Core.Config;
 using Bd.Core.Domain;
-using Bd.Core.Filters;
 using Bd.Core.Services;
 using Bd.Testing.Fakes;
 using FluentAssertions;
@@ -59,14 +58,27 @@ public sealed class ServicesTests
         ]);
         var service = new BoardService(store);
 
-        var snapshot = await service.LoadAsync(new BoardFilter(), CancellationToken.None);
+        var snapshot = await service.LoadAsync(CancellationToken.None);
 
         snapshot.Backlog.Should().ContainSingle().Which.Id.Should().Be("b-backlog");
         snapshot.Ready.Should().ContainSingle().Which.Id.Should().Be("b-ready");
         snapshot.Blocked.Select(static bead => bead.Id).Should().BeEquivalentTo(["b-blocked", "b-status-blocked"]);
         snapshot.InProgress.Should().ContainSingle().Which.Id.Should().Be("b-wip");
+        // 看板只加载未关闭任务，已关闭的不再进快照。
+        snapshot.Done.Should().BeEmpty();
+        snapshot.Total.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task Board_can_include_closed_when_user_asks_for_it()
+    {
+        var store = new InMemoryBdStore();
+        store.Beads.AddRange([Make("b-ready", "open"), Make("b-done", "closed")]);
+
+        var snapshot = await new BoardService(store).LoadAsync(includeClosed: true, CancellationToken.None);
+
         snapshot.Done.Should().ContainSingle().Which.Id.Should().Be("b-done");
-        snapshot.Total.Should().Be(6);
+        snapshot.Total.Should().Be(2);
     }
 
     [Fact]
@@ -80,36 +92,22 @@ public sealed class ServicesTests
             Make("mid", priority: 2)
         ]);
 
-        var snapshot = await new BoardService(store).LoadAsync(null, CancellationToken.None);
+        var snapshot = await new BoardService(store).LoadAsync(CancellationToken.None);
 
         snapshot.Ready.Select(static bead => bead.Id).Should().Equal("high", "mid", "low");
     }
 
     [Fact]
-    public async Task Board_hides_archived_unless_requested()
+    public async Task Board_hides_archived_beads()
     {
         var store = new InMemoryBdStore();
         store.Beads.Add(Make("arch", labels: [BdLabels.Archived]));
-        var service = new BoardService(store);
+        store.Beads.Add(Make("live"));
 
-        var hidden = await service.LoadAsync(null, CancellationToken.None);
-        var shown = await service.LoadAsync(new BoardFilter { IncludeArchived = true }, CancellationToken.None);
+        var snapshot = await new BoardService(store).LoadAsync(CancellationToken.None);
 
-        hidden.Total.Should().Be(0);
-        shown.Total.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task Filter_matches_search_type_priority_and_label()
-    {
-        var store = new InMemoryBdStore();
-        store.Beads.Add(Make("f-1", type: "bug", priority: 1, labels: ["ui"]));
-        store.Beads.Add(Make("f-2", type: "task", priority: 3));
-        var snapshot = await new BoardService(store).LoadAsync(
-            new BoardFilter { Type = BeadType.Bug, Priority = BeadPriority.P1, Labels = ["ui"], SearchText = "f-1" },
-            CancellationToken.None);
-
-        snapshot.Ready.Should().ContainSingle().Which.Id.Should().Be("f-1");
+        snapshot.Ready.Select(static bead => bead.Id).Should().Equal("live");
+        snapshot.Total.Should().Be(1);
     }
 
     [Fact]
@@ -242,7 +240,7 @@ public sealed class ServicesTests
     }
 
     [Fact]
-    public async Task Refresh_coordinator_refreshes_and_stops()
+    public async Task Refresh_coordinator_refreshes_on_demand_only()
     {
         var count = 0;
         await using var coordinator = new RefreshCoordinator(
@@ -251,8 +249,9 @@ public sealed class ServicesTests
                 count++;
                 return Task.CompletedTask;
             },
-            new FakeClock(),
-            TimeSpan.FromHours(1));
+            new FakeClock());
+
+        count.Should().Be(0, "协调器不做定时轮询，构造后不会自己刷新");
 
         await coordinator.RefreshNowAsync(CancellationToken.None);
         await coordinator.RefreshNowAsync(CancellationToken.None);
@@ -260,11 +259,6 @@ public sealed class ServicesTests
         count.Should().Be(2);
         coordinator.RefreshCount.Should().Be(2);
         coordinator.LastRefreshedAt.Should().NotBeNull();
-
-        coordinator.Start();
-        coordinator.IsRunning.Should().BeTrue();
-        await coordinator.StopAsync();
-        coordinator.IsRunning.Should().BeFalse();
     }
 
     [Fact]

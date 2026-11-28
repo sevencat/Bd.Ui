@@ -7,9 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Bd.Core.ViewModels;
 
-public sealed record NavItem(string Key, string Title, string Glyph, object View);
-
-/// <summary>外壳：导航、状态栏、轮询、详情抽屉与全局提示的编排者。</summary>
+/// <summary>外壳：左树右详情、工具条、状态栏、刷新与全局提示的编排者。</summary>
 public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
 {
     private readonly AppSession _session;
@@ -42,19 +40,17 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
         _toast = toast ?? throw new ArgumentNullException(nameof(toast));
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
 
-        NavItems =
-        [
-            new("board", "看板", "▦", Board),
-            new("epics", "Epics", "◆", Epics),
-            new("settings", "设置", "⚙", Settings)
-        ];
-
-        SelectedNav = NavItems[0];
-
         Board.CardActivated += (_, id) => _ = OpenDetailSafeAsync(id);
+        // 树面板上的「刷新」按钮由 Board 发出请求，真正刷新仍走外壳的统一入口。
+        Board.RefreshRequested += (_, _) => RefreshCommand.Execute(null);
         Epics.EpicActivated += (_, id) => _ = OpenDetailSafeAsync(id);
-        Detail.Closed += (_, _) => IsDetailOpen = false;
+        Detail.Closed += (_, _) =>
+        {
+            IsDetailOpen = false;
+            Board.ClearSelection();
+        };
         Detail.Changed += (_, _) => _ = RefreshAllSafeAsync();
+        Detail.NavigateRequested += (_, id) => _ = NavigateToAsync(id);
         Editor.Created += (_, id) => _ = AfterCreateSafeAsync(id);
         Settings.Applied += (_, _) =>
         {
@@ -65,7 +61,6 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
         _session.ConfigChanged += (_, config) => ApplyConfig(config);
 
         _coordinator = new RefreshCoordinator(RefreshAllAsync, SystemClock.Instance);
-        _coordinator.RefreshFailed += (_, exception) => _toast.Handle(exception);
         _coordinator.Refreshed += (_, _) => UpdateStatus();
     }
 
@@ -79,16 +74,14 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
 
     public BeadEditorViewModel Editor { get; }
 
-    public IReadOnlyList<NavItem> NavItems { get; }
-
     public ToastService Toasts => _toast;
 
     public event EventHandler<string>? ThemeChanged;
 
     public event EventHandler? CreateRequested;
 
-    [ObservableProperty]
-    private NavItem _selectedNav;
+    /// <summary>请求打开设置对话框（由窗口层弹窗，ViewModel 不引用 UI）。</summary>
+    public event EventHandler? SettingsRequested;
 
     [ObservableProperty]
     private bool _isDetailOpen;
@@ -121,8 +114,6 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
     [ObservableProperty]
     private bool _isProjectSwitcherVisible;
 
-    public object CurrentView => SelectedNav.View;
-
     partial void OnCurrentProjectChanged(ProjectInfo? value)
     {
         if (_suppressProjectSwitch || value is null)
@@ -144,20 +135,6 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
             : !_session.Config.DoltAggregateAll
               && string.Equals(project.Database, _session.Config.DoltDatabase, StringComparison.OrdinalIgnoreCase);
 
-    partial void OnSelectedNavChanged(NavItem value)
-    {
-        OnPropertyChanged(nameof(CurrentView));
-        if (value.Key == "epics")
-        {
-            _ = Epics.RefreshCoreAsync(CancellationToken.None, silent: true);
-        }
-
-        if (value.Key == "settings")
-        {
-            Settings.ReloadFromSession();
-        }
-    }
-
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -169,10 +146,8 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
             await RefreshAllAsync(cancellationToken);
             VersionText = await ReadVersionAsync(cancellationToken);
             await ReloadProjectsSafeAsync();
-            _coordinator.SetInterval(_session.Config.PollInterval);
-            _coordinator.Start();
             IsInitialized = true;
-            StatusText = "已连接，自动刷新已开启";
+            StatusText = "已连接";
         }
         catch (Exception ex)
         {
@@ -199,14 +174,12 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
+    /// <summary>右上角「设置」按钮：重载表单并请窗口弹出对话框。</summary>
     [RelayCommand]
-    public void Navigate(string? key)
+    public void OpenSettings()
     {
-        var item = NavItems.FirstOrDefault(candidate => string.Equals(candidate.Key, key, StringComparison.OrdinalIgnoreCase));
-        if (item is not null)
-        {
-            SelectedNav = item;
-        }
+        Settings.ReloadFromSession();
+        SettingsRequested?.Invoke(this, EventArgs.Empty);
     }
 
     [RelayCommand]
@@ -231,6 +204,10 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
 
     public async Task OpenDetailAsync(string id)
     {
+        // 先清空旧内容并显示加载态，数据回来后再渲染，避免旧任务内容残留。
+        Detail.BeginLoading(id);
+        IsDetailOpen = true;
+
         await Detail.LoadAsync(id);
         IsDetailOpen = Detail.IsOpen;
     }
@@ -244,6 +221,13 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
 
         _disposed = true;
         await _coordinator.DisposeAsync();
+    }
+
+    /// <summary>父/子任务跳转：树里同步高亮并刷新右侧详情。</summary>
+    private async Task NavigateToAsync(string id)
+    {
+        Board.RestoreSelection(id);
+        await OpenDetailSafeAsync(id);
     }
 
     private async Task OpenDetailSafeAsync(string id)
@@ -261,6 +245,7 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
     private async Task AfterCreateSafeAsync(string id)
     {
         await RefreshAllSafeAsync();
+        Board.RestoreSelection(id);
         await OpenDetailSafeAsync(id);
     }
 
@@ -314,7 +299,6 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
         RepoText = _isDemo
             ? "演示数据 · 未连接 Dolt"
             : $"dolt://{config.DoltHost}:{config.DoltPort}/{(config.DoltAggregateAll ? ProjectInfo.AggregateDatabase + "（全部项目）" : config.DoltDatabase)}";
-        _coordinator.SetInterval(config.PollInterval);
         ThemeChanged?.Invoke(this, config.Theme);
         Settings.ReloadFromSession();
 
@@ -486,6 +470,6 @@ public sealed partial class ShellViewModel : ObservableObject, IAsyncDisposable
     {
         var at = _coordinator.LastRefreshedAt?.ToLocalTime().ToString("HH:mm:ss") ?? "—";
         var suffix = _isDemo ? " · 演示" : IsReadOnly ? " · 只读" : string.Empty;
-        StatusText = $"刷新 {at} · {Board.TotalCount} 项 · 每 {_coordinator.Interval.TotalSeconds:0}s{suffix}";
+        StatusText = $"刷新 {at} · {Board.TotalCount} 项{suffix}";
     }
 }

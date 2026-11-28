@@ -14,6 +14,12 @@ public sealed record BeadListQuery
 
     public string? Search { get; init; }
 
+    /// <summary>
+    /// 排除已关闭任务。看板/任务树默认只看未关闭，让 SQL 直接过滤掉 closed，
+    /// 避免把整库历史任务拉回来再在内存里丢弃；同时给了 <see cref="Status"/> 时以它为准。
+    /// </summary>
+    public bool ExcludeClosed { get; init; }
+
     public int Limit { get; init; }
 }
 
@@ -91,6 +97,10 @@ public interface IBdStore
     Task<IReadOnlyList<DependencyLink>> ListDependenciesAsync(string id, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Comment>> ListCommentsAsync(string id, CancellationToken cancellationToken);
+
+    /// <summary>变更历史（events 表），默认实现返回空，只有支持事件流的后端才实现。</summary>
+    Task<IReadOnlyList<BeadEvent>> ListEventsAsync(string id, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<BeadEvent>>([]);
 
     Task<string> GetVersionAsync(CancellationToken cancellationToken);
 

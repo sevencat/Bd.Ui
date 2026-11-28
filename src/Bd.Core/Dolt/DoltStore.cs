@@ -93,13 +93,17 @@ public sealed partial class DoltStore : IBdStore
             PriorityValue = ReadInt32(row, "priority") ?? 2,
             TypeRaw = ReadString(row, "issue_type") ?? "task",
             Owner = ReadString(row, "owner"),
+            Assignee = ReadOptionalString(row, "assignee"),
+            Design = ReadOptionalString(row, "design"),
+            AcceptanceCriteria = ReadOptionalString(row, "acceptance_criteria"),
+            Notes = ReadOptionalString(row, "notes"),
+            CloseReason = ReadOptionalString(row, "close_reason"),
             CreatedBy = ReadString(row, "created_by"),
             CreatedAt = ReadTimestamp(row, "created_at"),
             UpdatedAt = ReadTimestamp(row, "updated_at"),
-            ParentId = ReadString(row, "parent_id"),
-            DependencyCount = ReadInt32(row, "dependency_count") ?? 0,
-            DependentCount = ReadInt32(row, "dependent_count") ?? 0,
-            CommentCount = ReadInt32(row, "comment_count") ?? 0
+            StartedAt = ReadOptionalTimestamp(row, "started_at"),
+            ClosedAt = ReadOptionalTimestamp(row, "closed_at"),
+            ParentId = ReadString(row, "parent_id")
         };
     }
 
@@ -121,10 +125,41 @@ public sealed partial class DoltStore : IBdStore
         CreatedAt = ReadTimestamp(row, "created_at")
     };
 
+    internal static BeadEvent MapEvent(IDataRecord row) => new()
+    {
+        IssueId = ReadOptionalString(row, "issue_id") ?? string.Empty,
+        EventTypeRaw = ReadOptionalString(row, "event_type") ?? string.Empty,
+        Actor = ReadOptionalString(row, "actor"),
+        OldValue = ReadOptionalString(row, "old_value"),
+        NewValue = ReadOptionalString(row, "new_value"),
+        Comment = ReadOptionalString(row, "comment"),
+        CreatedAt = ReadOptionalTimestamp(row, "created_at")
+    };
+
     private static string? ReadString(IDataRecord row, string column)
     {
         var ordinal = row.GetOrdinal(column);
         return row.IsDBNull(ordinal) ? null : row.GetValue(ordinal) as string ?? row.GetValue(ordinal).ToString();
+    }
+
+    /// <summary>列可能不在当前投影里（列表视图是轻量投影），缺席时返回 null 而不是抛错。</summary>
+    private static string? ReadOptionalString(IDataRecord row, string column) =>
+        HasColumn(row, column) ? ReadString(row, column) : null;
+
+    private static DateTimeOffset? ReadOptionalTimestamp(IDataRecord row, string column) =>
+        HasColumn(row, column) ? ReadTimestamp(row, column) : null;
+
+    private static bool HasColumn(IDataRecord row, string column)
+    {
+        for (var index = 0; index < row.FieldCount; index++)
+        {
+            if (string.Equals(row.GetName(index), column, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static int? ReadInt32(IDataRecord row, string column)

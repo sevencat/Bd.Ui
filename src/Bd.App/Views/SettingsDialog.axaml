@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Bd.Core.ViewModels"
+        xmlns:views="using:Bd.App.Views"
+        x:Class="Bd.App.Views.SettingsDialog"
+        x:DataType="vm:SettingsViewModel"
+        Title="设置"
+        Width="820"
+        Height="720"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="*,Auto">
+    <views:SettingsView Grid.Row="0" DataContext="{Binding}" />
+    <Border Grid.Row="1" Background="{DynamicResource PanelBackground}"
+            BorderBrush="{DynamicResource BorderBrushSoft}" BorderThickness="0,1,0,0"
+            Padding="16,10">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding SaveStatus}" Classes="tiny" VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="重新加载" Command="{Binding ReloadCommand}" />
+          <Button Content="保存" Classes="primary" Command="{Binding SaveCommand}" />
+          <Button Content="关闭" Click="OnCloseClick" />
+        </StackPanel>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

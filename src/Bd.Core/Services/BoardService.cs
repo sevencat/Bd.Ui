@@ -1,11 +1,14 @@
 using Bd.Core.Abstractions;
 using Bd.Core.Domain;
-using Bd.Core.Filters;
 using Bd.Core.Views;
 
 namespace Bd.Core.Services;
 
-/// <summary>聚合 list 与 closed 两次快照，按五列分列；失败时保留上次快照并抛结构化错误。</summary>
+/// <summary>
+/// 取一份任务快照并按列分列；失败时保留上次快照并抛结构化错误。
+/// 默认只要未关闭任务，查询时由 SQL 直接过滤掉 closed，避免把整库历史拉回内存；
+/// <paramref name="includeClosed"/> 为 true 时才把 closed 一起取回（用户显式切换后手动刷新）。
+/// </summary>
 public sealed class BoardService
 {
     private readonly IBdStore _store;
@@ -27,19 +30,16 @@ public sealed class BoardService
         }
     }
 
-    public async Task<BoardSnapshot> LoadAsync(BoardFilter? filter, CancellationToken cancellationToken)
+    public Task<BoardSnapshot> LoadAsync(CancellationToken cancellationToken) =>
+        LoadAsync(includeClosed: false, cancellationToken);
+
+    public async Task<BoardSnapshot> LoadAsync(bool includeClosed, CancellationToken cancellationToken)
     {
-        filter ??= new BoardFilter();
-        var activeTask = _store.ListAsync(new BeadListQuery(), cancellationToken);
-        var closedTask = _store.ListAsync(new BeadListQuery { Status = "closed" }, cancellationToken);
-        await Task.WhenAll(activeTask, closedTask).ConfigureAwait(false);
-
-        var active = await activeTask.ConfigureAwait(false);
-        var closed = await closedTask.ConfigureAwait(false);
-
-        var beads = active
-            .Concat(closed)
-            .Where(filter.Matches)
+        var beads = (await _store.ListAsync(
+                new BeadListQuery { ExcludeClosed = !includeClosed },
+                cancellationToken).ConfigureAwait(false))
+            // 归档任务不参与展示（归档走 labels 约定标记）。
+            .Where(static bead => !bead.IsArchived)
             // 聚合模式下不同库可能存在相同 ID，按「项目 + ID」去重。
             .GroupBy(static bead => (bead.Project, bead.Id))
             .Select(static group => group.First())

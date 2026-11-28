@@ -2,8 +2,8 @@
 .SYNOPSIS
     发布 Bd.Ui 为 win-x64 自包含单文件。
 .DESCRIPTION
-    产物默认落在 artifacts/publish，理论上只有 Bd.Ui.exe（SimdAIO 为纯托管后端，
-    不需要 SkiaSharp/HarfBuzzSharp 原生库）。若出现额外文件会给出警告。
+    产物默认落在 artifacts/publish，理论上只有 Bd.Ui.exe（Avalonia 平台链与 SkiaSharp/HarfBuzzSharp
+    都由 Win64Aio 包提供，单文件发布时一并打进 exe）。若出现额外文件会给出警告。
 .EXAMPLE
     pwsh scripts/publish.ps1
 .EXAMPLE

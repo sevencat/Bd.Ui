@@ -15,7 +15,7 @@ public sealed class DoltStoreMappingTests
         table.Rows.Add(
             "FHeroes2Sharp-a7l", "移植 castles", "描述", "in_progress", 1, "feature",
             "owner@example.com", "nwms", new DateTime(2026, 11, 20, 8, 0, 0), new DateTime(2026, 11, 21, 9, 30, 0),
-            3, 5, 2, "FHeroes2Sharp-3so");
+            "FHeroes2Sharp-3so");
 
         var bead = ReadSingle(table);
 
@@ -31,9 +31,6 @@ public sealed class DoltStoreMappingTests
         bead.CreatedAt!.Value.Offset.Should().Be(TimeSpan.Zero);
         bead.UpdatedAt.Should().Be(new DateTimeOffset(2026, 11, 21, 9, 30, 0, TimeSpan.Zero));
         bead.ParentId.Should().Be("FHeroes2Sharp-3so");
-        bead.DependencyCount.Should().Be(3);
-        bead.DependentCount.Should().Be(5);
-        bead.CommentCount.Should().Be(2);
     }
 
     [Fact]
@@ -41,8 +38,7 @@ public sealed class DoltStoreMappingTests
     {
         using var table = CreateBeadTable();
         table.Rows.Add("Bd_Ui-1", "标题", DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value,
-            DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value,
-            DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value);
+            DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value);
 
         var bead = ReadSingle(table);
 
@@ -52,7 +48,6 @@ public sealed class DoltStoreMappingTests
         bead.TypeRaw.Should().Be("task");
         bead.CreatedAt.Should().BeNull();
         bead.ParentId.Should().BeNull();
-        bead.DependencyCount.Should().Be(0);
         bead.IsClosed.Should().BeFalse();
     }
 
@@ -126,9 +121,6 @@ public sealed class DoltStoreMappingTests
         table.Columns.Add("created_by", typeof(string));
         table.Columns.Add("created_at", typeof(DateTime));
         table.Columns.Add("updated_at", typeof(DateTime));
-        table.Columns.Add("dependency_count", typeof(int));
-        table.Columns.Add("dependent_count", typeof(int));
-        table.Columns.Add("comment_count", typeof(int));
         table.Columns.Add("parent_id", typeof(string));
         return table;
     }

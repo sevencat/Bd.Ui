@@ -101,6 +101,16 @@ public sealed class CompositeBdStore : IBdStore
             : await owner.Store.ListCommentsAsync(id, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<BeadEvent>> ListEventsAsync(string id, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+
+        var owner = await FindOwnerAsync(id, cancellationToken).ConfigureAwait(false);
+        return owner is null
+            ? []
+            : await owner.Store.ListEventsAsync(id, cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task<string> GetVersionAsync(CancellationToken cancellationToken)
     {
         var members = await EnsureMembersAsync(cancellationToken).ConfigureAwait(false);

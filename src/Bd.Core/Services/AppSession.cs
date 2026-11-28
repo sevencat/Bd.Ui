@@ -29,7 +29,8 @@ public sealed class AppSession
 
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        Config = await _configStore.LoadAsync(cancellationToken).ConfigureAwait(false);
+        // 不要 ConfigureAwait(false)：调用方（ViewModel）依赖回到原线程继续工作。
+        Config = await _configStore.LoadAsync(cancellationToken);
         ApplyToRuntime(Config);
     }
 
@@ -37,7 +38,10 @@ public sealed class AppSession
     {
         ArgumentNullException.ThrowIfNull(config);
         var normalized = config.Normalize();
-        await _configStore.SaveAsync(normalized, cancellationToken).ConfigureAwait(false);
+
+        // ConfigChanged 会同步驱动主题、项目列表等 UI 绑定状态，
+        // 必须留在调用方线程（通常是 UI 线程）上触发；切到线程池会抛跨线程访问异常。
+        await _configStore.SaveAsync(normalized, cancellationToken);
         Config = normalized;
         ApplyToRuntime(normalized);
         ConfigChanged?.Invoke(this, normalized);

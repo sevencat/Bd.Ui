@@ -1,6 +1,6 @@
 # Bd.Ui
 
-基于 Avalonia 的 bd（beads）桌面客户端：看板、Epic 进度与任务详情，所有数据来自本地 `bd` CLI。
+基于 Avalonia 的 bd（beads）桌面客户端：看板、Epic 进度与任务详情，所有数据直接读写 Dolt 服务器（MySQL 协议），不调用 `bd` 命令行。
 
 ## 功能一览（对照 scotty）
 
@@ -9,16 +9,15 @@
 | 五列看板（Backlog / Ready / In Progress / Blocked / Done） | 支持 | 列定义与 bd 状态一一映射 |
 | 树状视图 | 支持 | 按 parent-child 递归展开，卡片可逐级展开/折叠，也可一键全部展开 |
 | 拖拽移列 | 支持 | 乐观更新；失败自动回滚并提示原因；拖到 Blocked 只做本地标记，不写库 |
-| 筛选 | 支持 | 搜索、类型、优先级、标签、包含已归档 |
-| 新建 / 编辑任务 | 支持 | 标题、类型、优先级、负责人、描述；写操作串行化 |
-| 任务详情 | 支持 | 评论、依赖、子任务、Epic 进度、创建者归属 |
+| 新建任务 | 支持 | 标题、类型、优先级、负责人、描述；写操作串行化 |
+| 任务详情 | 支持 | 只读展示状态/优先级/指派人，含评论、依赖、子任务、Epic 进度、创建者归属 |
 | Epic 视图 | 支持 | 进度条、子任务完成数、归档过滤 |
-| 评论 / 标签 | 支持 | 均通过 bd CLI 落库 |
+| 评论 / 标签 | 支持 | 直接写 Dolt 的 comments / labels 表 |
 | 归档 / 删除 | 支持 | 归档走标签约定，删除需确认 |
 | human / agent 归属 | 支持 | 依据创建者与 allowlist 标注 |
-| 只读模式 | 支持 | 写命令在 UI 层直接拒绝并说明原因 |
-| 离线演示数据 | 支持 | 找不到 bd 时自动进入只读演示模式 |
-| 自动刷新 | 支持 | 轮询间隔可配，写后立即刷新 |
+| 只读模式 | 支持 | 写操作在 UI 层直接拒绝并说明原因 |
+| 离线演示数据 | 支持 | 显式开启演示模式，内置只读示例数据 |
+| 自动刷新 | 不提供 | 只按需刷新：点「刷新」/ 写操作完成 / 保存设置 |
 | 明暗主题 / 快捷键 | 支持 | 见下方快捷键 |
 | Focus 视图、多项目/多仓库、Web 端 | 未实现 | 与 scotty 的已知差异 |
 
@@ -27,8 +26,8 @@
 - Windows x64（当前发布目标为 `win-x64`）
 - 开发：.NET SDK 10.0
 - 运行：自包含发布版无需安装 .NET
-- bd CLI 1.x（开发验证版本 1.3.4），可执行文件位于 `PATH` 或在设置中指定绝对路径
-- 被浏览的目录必须是 bd 仓库（包含 `.beads/`）；没有仓库时先在目录内执行 `bd init`
+- 可访问的 Dolt 服务器（`dolt sql-server`），库里是 beads 的表结构
+- 连接密码写在 config.json（也可留空，改用环境变量 `BEADS_DOLT_PASSWORD`）
 
 ## 快速开始
 
@@ -36,22 +35,23 @@
 # 1. 构建
 dotnet build Bd.Ui.slnx
 
-# 2. 运行（在 bd 仓库根目录执行最省事；也可在设置里填仓库路径）
+# 2. 运行（默认连团队共享 Dolt，库名 king_bdui，可在设置页改）
+# 默认口令已写入配置；如需改用环境变量：$env:BEADS_DOLT_PASSWORD = "<你的密码>"
 dotnet run --project src/Bd.App
 
 # 3. 测试
 dotnet test Bd.Ui.slnx
 ```
 
-首次启动若找不到 `bd`，应用不会报错退出，而是进入**只读演示模式**，可直接浏览看板、Epics 与详情。在「设置」中取消“演示模式”、填写仓库路径与 bd 路径后保存，即切换到真实仓库。
+首次启动会直接连接 Dolt：连不上时界面顶部提示错误、看板为空，可在「设置」里改主机/端口/库名后点「测试连接」。想先离线看界面，就勾选「演示模式」——内置一份只读示例数据，不访问任何服务器。
 
 ## 使用说明
 
-- `Ctrl+N` 新建任务；`Ctrl+R` / `F5` 刷新；`Ctrl+F` 聚焦搜索。
+- `Ctrl+N` 新建任务；`Ctrl+R` / `F5` 刷新。
 - `Ctrl+1` 看板、`Ctrl+2` Epics、`Ctrl+3` 设置；`Esc` 关闭详情抽屉。
 - 看板页顶部的「看板 / 树状」下拉切换视图；树状视图按父子关系缩进，点卡片左侧箭头展开或折叠，工具栏可一键「全部展开 / 全部折叠」。树状视图不支持拖拽移列。
-- 拖拽卡片到 Done 会关闭任务；拖到 Blocked 只提示原因，不写库（bd 的阻塞由依赖决定）。
-- 只读模式（设置项或演示数据）下，所有写入口直接拒绝并 toast 说明，不会产生 bd 子进程。
+- 拖拽卡片到 Done 会关闭任务；拖到 Blocked 只提示原因，不写库（beads 的阻塞由依赖决定）。
+- 只读模式（设置项或演示数据）下，所有写入口直接拒绝并 toast 说明，不会向服务器发出写语句。
 
 ## 配置
 
@@ -59,17 +59,20 @@ dotnet test Bd.Ui.slnx
 
 | 字段 | 默认值 | 说明 |
 | --- | --- | --- |
-| `RepoPath` | 空 | bd 仓库路径；空则使用当前工作目录 |
-| `BdBinaryPath` | `bd` | bd 可执行文件，支持裸文件名（走 PATH）或绝对路径 |
+| `DoltHost` | 团队共享服务器 | Dolt 服务器主机，默认值见 `src/Bd.Core/Config/DoltDefaults.cs` |
+| `DoltPort` | `7050` | Dolt 服务器端口（MySQL 协议） |
+| `DoltUser` | `nwms` | 连接用户 |
+| `DoltPassword` | 默认口令 | 连接密码，明文存储；留空则读取环境变量 `BEADS_DOLT_PASSWORD` |
+| `DoltDatabase` | `king_bdui` | 目标库，一个库即一个项目 |
+| `DoltUseTls` | `false` | 连接启用 TLS |
+| `DoltAggregateAll` | `false` | 合并服务器上所有 beads 库为「全部项目」（只读） |
 | `HumanActor` | 空 | 视为“人”的操作者名称，用于归属标注与 allowlist |
 | `HumanAllowlist` | 空 | 额外视为人的名称列表 |
-| `PollSeconds` | 5 | 自动刷新间隔，1–300 秒 |
 | `Theme` | `Dark` | `Dark` / `Light` |
 | `ReadOnly` | `false` | 禁止所有写操作 |
-| `DemoMode` | `false` | 强制使用内置演示数据，不启动 bd |
+| `DemoMode` | `false` | 使用内置演示数据，不连接 Dolt |
 | `LogMaxFileSizeKb` | 2048 | 单个日志文件上限，超过后滚动 |
 | `LogRetentionDays` | 7 | 归档日志保留天数 |
-| `StorageBackend` | `cli` | `cli` 为正常模式；`demo` 等同演示模式 |
 
 日志目录：`%APPDATA%\Bd.Ui\logs\bd-ui.log`，按大小滚动并清理过期归档。UI 线程、未观察任务与应用域异常都会带堆栈写入日志。
 
@@ -114,11 +117,12 @@ CI 工作流见 `.github/workflows/ci.yml`，执行内容与 `scripts/ci.ps1` �
 
 | 现象 | 处理 |
 | --- | --- |
-| 界面显示「演示数据 · 未连接 bd」 | 未找到 bd 或开启了演示模式；检查 PATH / `BdBinaryPath` / `DemoMode` |
-| 提示不是 bd 仓库 | 目标目录缺少 `.beads/`，先执行 `bd init`，或在设置中改仓库路径 |
-| `LockBusy` / 写操作繁忙 | bd 数据库被其他进程占用；等待重试，避免同时运行多个写操作 |
-| 写操作被拒绝且提示只读 | 关闭只读模式，或当前处于演示数据 |
-| 界面无任务但 bd 命令行有 | 确认仓库路径、包含已归档筛选与搜索条件 |
+| 界面显示「演示数据 · 未连接 Dolt」 | 开启了演示模式；在「设置」取消勾选并保存 |
+| 顶部提示连接失败 / 看板为空 | 检查 `DoltHost` / `DoltPort` / `DoltUser` / `DoltPassword` / `DoltDatabase`（密码留空时看 `BEADS_DOLT_PASSWORD`），用「测试连接」验证 |
+| 提示不是 beads 库 | 目标库缺少 beads 表结构，确认 `DoltDatabase` 或先用 bd 在该库初始化 |
+| `LockBusy` / 写操作繁忙 | 行锁被其他客户端持有；等待重试，避免并发写同一条任务 |
+| 写操作被拒绝且提示只读 | 关闭只读模式，或当前处于演示数据 / 「全部项目」聚合视图 |
+| 界面无任务但库里明明有 | 检查当前选中的项目，以及任务是否被打了 `archived` 归档标签 |
 | 启动异常 | 查看 `%APPDATA%\Bd.Ui\logs\bd-ui.log` |
 
 ## 架构

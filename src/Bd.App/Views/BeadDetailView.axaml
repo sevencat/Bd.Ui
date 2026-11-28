@@ -3,126 +3,260 @@
              xmlns:vm="using:Bd.Core.ViewModels"
              x:Class="Bd.App.Views.BeadDetailView"
              x:DataType="vm:BeadDetailViewModel">
-  <Border Classes="panel" CornerRadius="0" Padding="16">
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
-      <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
-        <StackPanel Spacing="6">
-          <TextBlock Text="{Binding Title}" Classes="h1" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding MetaText}" Classes="tiny" TextWrapping="Wrap" />
+  <Grid RowDefinitions="Auto,*,Auto" Margin="20,16,16,12">
+    <!-- 标题区：标题 + 元信息 + 状态/优先级/指派 -->
+    <StackPanel Grid.Row="0" Spacing="10">
+      <SelectableTextBlock Text="{Binding Title}" Classes="h1" TextWrapping="Wrap" />
+
+      <!-- 元信息与 Status / Priority / Assignee 合并成一行只读展示，窄窗口下元信息自动裁切。 -->
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                    ClipToBounds="True">
+          <TextBlock Text="👤" Classes="tiny" VerticalAlignment="Center" />
+          <TextBlock Text="Owner" Classes="tiny" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding OwnerText}" Classes="muted" VerticalAlignment="Center"
+                     TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="·" Classes="tiny" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding TypeText}" Classes="muted" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding AttributionText}" Classes="tiny"
+                     Foreground="{DynamicResource PurpleBrush}" VerticalAlignment="Center" />
+          <TextBlock Text="已归档" Classes="tiny" Foreground="{DynamicResource WarningBrush}"
+                     VerticalAlignment="Center" IsVisible="{Binding IsArchived}" />
         </StackPanel>
-        <Button Grid.Column="1" Content="✕" Classes="ghost" Command="{Binding CloseCommand}"
-                VerticalAlignment="Top" />
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <TextBlock Text="Status" Classes="tiny" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding StatusText}" Classes="muted" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <TextBlock Text="Priority" Classes="tiny" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding PriorityText}" Classes="muted" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <TextBlock Text="Assignee" Classes="tiny" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding AssigneeText}" Classes="muted" VerticalAlignment="Center"
+                     MaxWidth="160" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
       </Grid>
 
-      <Border Grid.Row="1" Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
-              Padding="10" Margin="0,10,0,0">
-        <StackPanel Spacing="8">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBlock Text="{Binding StatusText}" Classes="muted" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding TypeText}" Classes="muted" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding PriorityText}" Classes="muted" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding AttributionText}" Classes="tiny"
-                       Foreground="{DynamicResource PurpleBrush}" VerticalAlignment="Center" />
-            <TextBlock Text="已归档" Classes="tiny" Foreground="{DynamicResource WarningBrush}"
-                       VerticalAlignment="Center" IsVisible="{Binding IsArchived}" />
-          </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <ComboBox Width="130" ItemsSource="{Binding StatusOptions}"
-                      SelectedItem="{Binding SelectedStatus, Mode=TwoWay}" />
-            <TextBox Width="140" PlaceholderText="指派给"
-                     Text="{Binding AssigneeInput, Mode=TwoWay}" />
-            <Button Content="保存" Classes="primary" Command="{Binding SaveCommand}"
-                    IsVisible="{Binding CanEdit}" />
-          </StackPanel>
-        </StackPanel>
-      </Border>
+      <TextBlock Text="{Binding MetaText}" Classes="tiny" TextTrimming="CharacterEllipsis" />
+    </StackPanel>
 
-      <ScrollViewer Grid.Row="2" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="14">
-          <StackPanel Spacing="4" IsVisible="{Binding HasChildren}">
+    <Grid Grid.Row="1" Margin="0,14,0,0">
+      <!-- 加载时整块内容隐藏，只留居中的进度提示，避免闪现上一个任务的内容。 -->
+      <ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding !IsLoading}">
+      <StackPanel Spacing="16">
+        <StackPanel Spacing="4" IsVisible="{Binding HasChildren}">
+          <Grid ColumnDefinitions="*,Auto">
             <TextBlock Text="子任务进度" Classes="muted" />
-            <Grid ColumnDefinitions="*,Auto">
-              <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressRatio}" />
-              <TextBlock Grid.Column="1" Text="{Binding ProgressText}" Classes="muted" Margin="10,0,0,0" />
-            </Grid>
-          </StackPanel>
+            <TextBlock Grid.Column="1" Text="{Binding ProgressText}" Classes="tiny" />
+          </Grid>
+          <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressRatio}" />
+        </StackPanel>
 
-          <StackPanel Spacing="4">
-            <TextBlock Text="描述" Classes="h2" />
-            <SelectableTextBlock Text="{Binding Body}" TextWrapping="Wrap"
-                                 Foreground="{DynamicResource TextSecondary}" />
-          </StackPanel>
+        <StackPanel Spacing="6">
+          <TextBlock Text="DESCRIPTION" Classes="section" />
+          <SelectableTextBlock Text="{Binding Body}" Classes="body" TextWrapping="Wrap" />
+          <TextBlock Text="＋ 还没有描述" Classes="tiny" IsVisible="{Binding !HasBody}" />
+        </StackPanel>
 
-          <StackPanel Spacing="4">
-            <TextBlock Text="依赖" Classes="h2" />
-            <ItemsControl ItemsSource="{Binding Dependencies}">
+        <StackPanel Spacing="6">
+          <TextBlock Text="{Binding Events.Count, StringFormat='CHANGE HISTORY ({0})'}" Classes="section" />
+          <TextBlock Text="暂无变更记录" Classes="tiny" IsVisible="{Binding !HasEvents}" />
+
+          <!-- 变更历史：类型徽标 / 明细 / 操作者 / 时间 四列对齐。 -->
+          <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
+                  Padding="10,8" IsVisible="{Binding HasEvents}">
+            <ItemsControl ItemsSource="{Binding Events}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:DetailEventRow">
+                  <Grid ColumnDefinitions="92,*,76,84" ColumnSpacing="8" Margin="0,0,0,5">
+                    <Border Background="{DynamicResource AppBackground}" CornerRadius="4"
+                            Padding="6,1" HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Margin="0,1,0,0">
+                      <TextBlock Text="{Binding TypeText}" Classes="tiny" />
+                    </Border>
+                    <!-- 快照 JSON 只显示差异字段：字段名 + 旧值 → 新值 -->
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding DetailText}" Classes="muted" TextWrapping="Wrap"
+                                 IsVisible="{Binding HasDetail}" />
+                      <ItemsControl ItemsSource="{Binding Changes}" IsVisible="{Binding HasChanges}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:DetailEventChange">
+                            <Grid ColumnDefinitions="72,*" ColumnSpacing="6">
+                              <TextBlock Text="{Binding Field}" Classes="tiny" VerticalAlignment="Center" />
+                              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                          VerticalAlignment="Center">
+                                <TextBlock Text="{Binding OldText}" Classes="tiny"
+                                           TextDecorations="Strikethrough" VerticalAlignment="Center"
+                                           IsVisible="{Binding HasOld}" />
+                                <TextBlock Text="→" Classes="tiny" VerticalAlignment="Center"
+                                           IsVisible="{Binding HasArrow}" />
+                                <SelectableTextBlock Text="{Binding NewText}" Classes="muted"
+                                                     Foreground="{DynamicResource TextPrimary}"
+                                                     TextWrapping="Wrap" VerticalAlignment="Center"
+                                                     IsVisible="{Binding HasNew}" />
+                              </StackPanel>
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding ActorText}" Classes="tiny"
+                               TextAlignment="Right" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="3" Text="{Binding WhenText}" Classes="tiny"
+                               TextAlignment="Right" VerticalAlignment="Center" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+
+          <!-- 关闭原因单独成块，避免和上方的关闭事件明细混在一起。 -->
+          <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
+                  Padding="10,8" IsVisible="{Binding HasCloseReason}">
+            <StackPanel Spacing="4">
+              <TextBlock Text="关闭原因" Classes="tiny" />
+              <SelectableTextBlock Text="{Binding CloseReasonText}" Classes="body" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel Spacing="6">
+          <TextBlock Text="DESIGN" Classes="section" />
+          <SelectableTextBlock Text="{Binding DesignText}" Classes="body" TextWrapping="Wrap" />
+          <TextBlock Text="＋ 还没有设计说明" Classes="tiny" IsVisible="{Binding !HasDesign}" />
+        </StackPanel>
+
+        <StackPanel Spacing="6">
+          <TextBlock Text="ACCEPTANCE CRITERIA" Classes="section" />
+          <SelectableTextBlock Text="{Binding AcceptanceText}" Classes="body" TextWrapping="Wrap" />
+          <TextBlock Text="＋ 还没有验收标准" Classes="tiny" IsVisible="{Binding !HasAcceptance}" />
+        </StackPanel>
+
+        <StackPanel Spacing="4" IsVisible="{Binding HasParent}">
+          <TextBlock Text="PARENT" Classes="section" />
+          <Button Classes="ghost" HorizontalAlignment="Left" Command="{Binding OpenParentCommand}"
+                  Content="{Binding ParentId}" />
+        </StackPanel>
+
+        <StackPanel Spacing="4" IsVisible="{Binding HasChildren}">
+          <TextBlock Text="CHILDREN" Classes="section" />
+          <ItemsControl ItemsSource="{Binding Children}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DetailChildRow">
+                <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
+                        Padding="8,5" Margin="0,0,0,4"
+                        DoubleTapped="OnChildDoubleTapped">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Text="{Binding Id}" Classes="tiny" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{Binding StatusText}" Classes="tiny"
+                               VerticalAlignment="Center" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <StackPanel Spacing="6">
+          <TextBlock Text="DEPENDENCIES" Classes="section" />
+          <TextBlock Text="没有依赖或关联" Classes="tiny" IsVisible="{Binding !HasDependencies}" />
+
+          <!-- Depends On：被这些任务阻塞；状态徽标 + 「ID: 标题」。 -->
+          <StackPanel Spacing="4" IsVisible="{Binding HasDependsOn}">
+            <TextBlock Text="Depends On" Classes="muted" />
+            <ItemsControl ItemsSource="{Binding DependsOn}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:DetailDependencyRow">
-                  <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
-                          Padding="8,5" Margin="0,0,0,4">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                      <TextBlock Text="{Binding TargetId}" Classes="tiny" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Text="{Binding TypeText}" Classes="tiny" Margin="10,0"
-                                 VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" Text="{Binding StatusText}" Classes="tiny"
-                                 VerticalAlignment="Center" />
-                    </Grid>
-                  </Border>
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,0,0,4"
+                        ToolTip.Tip="{Binding TypeText}">
+                    <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="4"
+                            Padding="6,1" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding StatusText}" FontSize="11"
+                                 Classes="depstatus"
+                                 Classes.closed="{Binding IsClosed}"
+                                 Classes.inprogress="{Binding IsInProgress}"
+                                 Classes.blocked="{Binding IsBlocked}" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding Heading}" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                  </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
           </StackPanel>
 
-          <StackPanel Spacing="4" IsVisible="{Binding HasChildren}">
-            <TextBlock Text="子任务" Classes="h2" />
-            <ItemsControl ItemsSource="{Binding Children}">
+          <!-- Related：related / duplicates / supersedes 等非阻塞关联。 -->
+          <StackPanel Spacing="4" IsVisible="{Binding HasRelated}">
+            <TextBlock Text="Related" Classes="muted" />
+            <ItemsControl ItemsSource="{Binding Related}">
               <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:DetailChildRow">
-                  <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
-                          Padding="8,5" Margin="0,0,0,4"
-                          DoubleTapped="OnChildDoubleTapped">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                      <TextBlock Text="{Binding Id}" Classes="tiny" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="10,0"
-                                 TextTrimming="CharacterEllipsis" />
-                      <TextBlock Grid.Column="2" Text="{Binding StatusText}" Classes="tiny"
-                                 VerticalAlignment="Center" />
-                    </Grid>
-                  </Border>
+                <DataTemplate x:DataType="vm:DetailDependencyRow">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,0,0,4"
+                        ToolTip.Tip="{Binding TypeText}">
+                    <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="4"
+                            Padding="6,1" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding StatusText}" FontSize="11"
+                                 Classes="depstatus"
+                                 Classes.closed="{Binding IsClosed}"
+                                 Classes.inprogress="{Binding IsInProgress}"
+                                 Classes.blocked="{Binding IsBlocked}" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding Heading}" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                  </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-          </StackPanel>
-
-          <StackPanel Spacing="6">
-            <TextBlock Text="评论" Classes="h2" />
-            <ItemsControl ItemsSource="{Binding Comments}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="vm:DetailCommentRow">
-                  <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
-                          Padding="8" Margin="0,0,0,6">
-                    <StackPanel Spacing="2">
-                      <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding Author}" Classes="tiny" />
-                        <TextBlock Text="{Binding CreatedText}" Classes="tiny" />
-                      </StackPanel>
-                      <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
-                    </StackPanel>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <TextBox Height="64" AcceptsReturn="True" TextWrapping="Wrap"
-                     PlaceholderText="写下评论…" Text="{Binding CommentText, Mode=TwoWay}" />
-            <Button Content="添加评论" HorizontalAlignment="Left" Command="{Binding AddCommentCommand}" />
           </StackPanel>
         </StackPanel>
+
+        <StackPanel Spacing="6">
+          <TextBlock Classes="section"
+                     Text="{Binding Comments.Count, StringFormat='COMMENTS ({0})'}" />
+          <TextBlock Text="还没有评论" Classes="tiny" IsVisible="{Binding !HasComments}" />
+          <ItemsControl ItemsSource="{Binding Comments}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DetailCommentRow">
+                <Border Background="{DynamicResource PanelAltBackground}" CornerRadius="6"
+                        Padding="8" Margin="0,0,0,6">
+                  <StackPanel Spacing="2">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Text="{Binding Author}" Classes="tiny" />
+                      <TextBlock Text="{Binding CreatedText}" Classes="tiny" />
+                    </StackPanel>
+                    <SelectableTextBlock Text="{Binding Text}" Classes="body" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBox Height="64" AcceptsReturn="True" TextWrapping="Wrap"
+                   PlaceholderText="写评论…（Ctrl+Enter 提交）"
+                   Text="{Binding CommentText, Mode=TwoWay}" KeyDown="OnCommentKeyDown" />
+          <Button Content="Comment" Classes="primary" HorizontalAlignment="Right"
+                  Command="{Binding AddCommentCommand}" />
+        </StackPanel>
+      </StackPanel>
       </ScrollViewer>
 
-      <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" Margin="0,10,0,0">
-        <Button Content="归档" Command="{Binding ArchiveCommand}" IsVisible="{Binding !IsArchived}" />
-        <Button Content="删除" Classes="danger" Command="{Binding DeleteCommand}" />
+      <StackPanel IsVisible="{Binding IsLoading}" Spacing="10"
+                  HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ProgressBar IsIndeterminate="True" Width="160" Height="4" />
+        <TextBlock Text="正在加载…" Classes="muted" HorizontalAlignment="Center" />
       </StackPanel>
     </Grid>
-  </Border>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="0,12,0,0"
+                IsVisible="{Binding !IsLoading}">
+      <Button Content="归档" Command="{Binding ArchiveCommand}" IsVisible="{Binding !IsArchived}" />
+      <Button Content="删除" Classes="danger" Command="{Binding DeleteCommand}" />
+    </StackPanel>
+  </Grid>
 </UserControl>

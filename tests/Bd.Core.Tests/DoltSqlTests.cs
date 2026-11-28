@@ -57,6 +57,21 @@ public sealed class DoltSqlTests
     }
 
     [Fact]
+    public void Exclude_closed_filters_in_sql_without_parameter()
+    {
+        var (sql, parameters) = DoltSql.BuildListQuery(new BeadListQuery { ExcludeClosed = true });
+
+        sql.Should().Contain("WHERE i.status <> 'closed'");
+        parameters.Should().BeEmpty();
+
+        // 显式指定 Status 时以 Status 为准，不叠加 ExcludeClosed。
+        var (statusSql, statusParameters) = DoltSql.BuildListQuery(
+            new BeadListQuery { Status = "closed", ExcludeClosed = true });
+        statusSql.Should().Contain("i.status = @status").And.NotContain("<> 'closed'");
+        statusParameters.Should().HaveCount(1);
+    }
+
+    [Fact]
     public void Search_pattern_escapes_like_wildcards()
     {
         DoltSql.ToLikePattern("50%_done!").Should().Be("%50!%!_done!!%");

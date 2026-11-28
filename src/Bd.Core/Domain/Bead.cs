@@ -23,8 +23,23 @@ public sealed record Bead
     [JsonPropertyName("issue_type")]
     public string TypeRaw { get; init; } = "task";
 
+    [JsonPropertyName("design")]
+    public string? Design { get; init; }
+
+    [JsonPropertyName("acceptance_criteria")]
+    public string? AcceptanceCriteria { get; init; }
+
+    [JsonPropertyName("notes")]
+    public string? Notes { get; init; }
+
+    [JsonPropertyName("close_reason")]
+    public string? CloseReason { get; init; }
+
     [JsonPropertyName("owner")]
     public string? Owner { get; init; }
+
+    [JsonPropertyName("assignee")]
+    public string? Assignee { get; init; }
 
     [JsonPropertyName("created_by")]
     public string? CreatedBy { get; init; }
@@ -34,6 +49,12 @@ public sealed record Bead
 
     [JsonPropertyName("updated_at")]
     public DateTimeOffset? UpdatedAt { get; init; }
+
+    [JsonPropertyName("started_at")]
+    public DateTimeOffset? StartedAt { get; init; }
+
+    [JsonPropertyName("closed_at")]
+    public DateTimeOffset? ClosedAt { get; init; }
 
     [JsonPropertyName("labels")]
     public IReadOnlyList<string> Labels { get; init; } = [];
