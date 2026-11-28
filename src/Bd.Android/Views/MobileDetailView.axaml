@@ -1,0 +1,199 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bd.Core.ViewModels"
+             xmlns:conv="using:Avalonia.Data.Converters"
+             x:Class="Bd.Mobile.Views.MobileDetailView"
+             x:DataType="vm:BeadDetailViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.sectionHeader">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource SurfaceBg}" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="14,12" />
+      <Setter Property="Margin" Value="12,0,12,10" />
+    </Style>
+    <Style Selector="TextBlock.body">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="LineHeight" Value="20" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    </Style>
+    <Style Selector="Border.chip">
+      <Setter Property="Background" Value="#2B3140" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="8,3" />
+    </Style>
+    <Style Selector="TextBlock.chipText">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer Background="{DynamicResource PageBg}">
+    <StackPanel Spacing="0" Margin="0,12,0,24">
+      <!-- 标题与标签 -->
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="SemiBold"
+                     TextWrapping="Wrap" Foreground="{DynamicResource TextPrimary}" />
+          <WrapPanel Orientation="Horizontal">
+            <Border Classes="chip" Margin="0,0,6,6">
+              <TextBlock Classes="chipText" Text="{Binding StatusText}" />
+            </Border>
+            <Border Classes="chip" Margin="0,0,6,6">
+              <TextBlock Classes="chipText" Text="{Binding TypeText}" />
+            </Border>
+            <Border Classes="chip" Margin="0,0,6,6">
+              <TextBlock Classes="chipText" Text="{Binding PriorityText}" />
+            </Border>
+            <Border Classes="chip" Margin="0,0,6,6">
+              <TextBlock Classes="chipText" Text="{Binding AttributionText}" />
+            </Border>
+            <Border Classes="chip" Margin="0,0,6,6" Background="{DynamicResource DangerBg}"
+                    IsVisible="{Binding IsArchived}">
+              <TextBlock Classes="chipText" Text="已归档" Foreground="{DynamicResource DangerText}" />
+            </Border>
+          </WrapPanel>
+          <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="muted" Text="负责人" Width="56" />
+            <TextBlock Grid.Column="1" Classes="muted" Text="{Binding OwnerText}" />
+            <TextBlock Grid.Row="1" Classes="muted" Text="指派" Width="56" Margin="0,3,0,0" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Classes="muted" Text="{Binding AssigneeText}" Margin="0,3,0,0" />
+          </Grid>
+          <TextBlock Classes="muted" Text="{Binding MetaText}" TextWrapping="Wrap" />
+
+          <StackPanel Spacing="4" IsVisible="{Binding HasChildren}">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="muted" Text="子任务进度" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="{Binding ProgressText}" />
+            </Grid>
+            <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressRatio}" Height="6" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- 描述 -->
+      <Border Classes="card" IsVisible="{Binding HasBody}">
+        <StackPanel Spacing="0">
+          <TextBlock Classes="sectionHeader" Text="描述" />
+          <TextBlock Classes="body" Text="{Binding Body}" />
+        </StackPanel>
+      </Border>
+
+      <!-- 设计 / 验收 / 备注 / 关闭原因 -->
+      <Border Classes="card" IsVisible="{Binding HasDesign}">
+        <StackPanel Spacing="0">
+          <TextBlock Classes="sectionHeader" Text="设计" />
+          <TextBlock Classes="body" Text="{Binding DesignText}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding HasAcceptance}">
+        <StackPanel Spacing="0">
+          <TextBlock Classes="sectionHeader" Text="验收标准" />
+          <TextBlock Classes="body" Text="{Binding AcceptanceText}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card"
+              IsVisible="{Binding NotesText, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
+        <StackPanel Spacing="0">
+          <TextBlock Classes="sectionHeader" Text="备注" />
+          <TextBlock Classes="body" Text="{Binding NotesText}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card" IsVisible="{Binding HasCloseReason}">
+        <StackPanel Spacing="0">
+          <TextBlock Classes="sectionHeader" Text="关闭原因" />
+          <TextBlock Classes="body" Text="{Binding CloseReasonText}" />
+        </StackPanel>
+      </Border>
+
+      <!-- 阻塞依赖 -->
+      <Border Classes="card" IsVisible="{Binding HasDependsOn}">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionHeader" Text="被这些任务阻塞" />
+          <ItemsControl ItemsSource="{Binding DependsOn}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DetailDependencyRow">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                  <TextBlock Text="{Binding Heading}" FontSize="12" TextTrimming="CharacterEllipsis"
+                             Foreground="{DynamicResource TextPrimary}" />
+                  <TextBlock Grid.Column="1" Text="{Binding StatusText}" FontSize="11"
+                             Margin="8,0,0,0" Foreground="{DynamicResource TextMuted}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- 子任务：点一行跳到那条任务 -->
+      <Border Classes="card" IsVisible="{Binding HasChildren}">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionHeader" Text="子任务" />
+          <ItemsControl ItemsSource="{Binding Children}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DetailChildRow">
+                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                        Padding="0,6" Background="Transparent" Tapped="OnChildTapped">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Text="·" FontSize="12" Margin="0,0,6,0"
+                               Foreground="{DynamicResource TextMuted}" />
+                    <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13"
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource TextPrimary}" />
+                    <TextBlock Grid.Column="2" Text="{Binding StatusText}" FontSize="11"
+                               Margin="8,0,0,0" Foreground="{DynamicResource TextMuted}" />
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- 评论 -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="sectionHeader" Text="评论" />
+          <TextBlock Classes="muted" Text="还没有评论"
+                     IsVisible="{Binding !HasComments}" />
+          <ItemsControl ItemsSource="{Binding Comments}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DetailCommentRow">
+                <StackPanel Spacing="2" Margin="0,0,0,8">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Author}" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource Accent}" />
+                    <TextBlock Grid.Column="1" Text="{Binding CreatedText}" Classes="muted" />
+                  </Grid>
+                  <TextBlock Classes="body" Text="{Binding Text}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <TextBox Text="{Binding CommentText}" PlaceholderText="写条评论..." FontSize="13"
+                     AcceptsReturn="False" MinHeight="38" />
+            <Button Grid.Column="1" Content="发送" Command="{Binding AddCommentCommand}"
+                    Margin="8,0,0,0" FontSize="13" Padding="14,0"
+                    Foreground="{DynamicResource Accent}"
+                    IsEnabled="{Binding CommentText, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

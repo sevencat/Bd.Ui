@@ -1,0 +1,204 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Bd.Core.ViewModels"
+             xmlns:views="using:Bd.Mobile.Views"
+             xmlns:conv="using:Avalonia.Data.Converters"
+             x:Class="Bd.Mobile.Views.MobileShellView"
+             x:DataType="vm:MobileShellViewModel">
+  <UserControl.Styles>
+    <Style Selector="ListBoxItem">
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="ListBox">
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid Background="{DynamicResource PageBg}">
+    <!-- ① 任务树列表 -->
+    <Grid RowDefinitions="Auto,Auto,*,Auto" IsVisible="{Binding IsListVisible}">
+      <Border Grid.Row="0" Background="{DynamicResource PanelBg}" Padding="16,12">
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Bd.Ui" FontSize="20" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimary}" />
+            <TextBlock Text="{Binding VersionText}" FontSize="11"
+                       Foreground="{DynamicResource TextMuted}" />
+          </StackPanel>
+          <Button Grid.Column="1" Content="⚙" Command="{Binding OpenSettingsCommand}"
+                  Foreground="{DynamicResource TextMuted}"
+                  FontSize="18" Padding="10,0" VerticalAlignment="Center"
+                  ToolTip.Tip="连接设置" />
+          <Button Grid.Column="2" Content="⟳" Command="{Binding RefreshCommand}"
+                  Foreground="{DynamicResource Accent}"
+                  FontSize="20" Padding="10,0" VerticalAlignment="Center"
+                  ToolTip.Tip="重新拉取任务" />
+        </Grid>
+      </Border>
+
+      <Border Grid.Row="1" Background="{DynamicResource DangerBg}" CornerRadius="8"
+              Margin="12,10,12,0" Padding="12,8"
+              IsVisible="{Binding ErrorMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
+        <TextBlock Text="{Binding ErrorMessage}" FontSize="12" TextWrapping="Wrap"
+                   Foreground="{DynamicResource DangerText}" />
+      </Border>
+
+      <ListBox Grid.Row="2" Margin="8,8,8,0" Background="Transparent"
+               SelectionChanged="OnTreeSelectionChanged"
+               ItemsSource="{Binding Board.TreeRows}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:BoardTreeNodeViewModel">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" Height="44" Background="Transparent">
+              <Border Width="{Binding IndentWidth}" />
+              <Button Grid.Column="1" Width="30" Height="30" Padding="0"
+                      Content="{Binding ToggleGlyph}" Command="{Binding ToggleCommand}"
+                      Foreground="{DynamicResource TextMuted}"
+                      FontSize="15" HorizontalContentAlignment="Center"
+                      IsVisible="{Binding HasChildren}" />
+              <Border Grid.Column="1" Width="30" IsVisible="{Binding !HasChildren}" />
+              <TextBlock Grid.Column="2" Text="{Binding TypeGlyph}" FontSize="11"
+                         VerticalAlignment="Center" Margin="0,0,6,0"
+                         Foreground="{DynamicResource TextMuted}" />
+              <TextBlock Grid.Column="3" Text="{Binding StatusGlyph}" FontSize="12" Width="14"
+                         TextAlignment="Center" VerticalAlignment="Center" Margin="0,0,6,0"
+                         Foreground="{DynamicResource TextMuted}" />
+              <TextBlock Grid.Column="4" Text="{Binding Card.Title}" FontSize="14"
+                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                         Foreground="{DynamicResource TextPrimary}" />
+              <TextBlock Grid.Column="5" Text="{Binding ProgressText}" FontSize="10"
+                         VerticalAlignment="Center" Margin="8,0,4,0"
+                         Foreground="{DynamicResource TextMuted}" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <Border Grid.Row="2" Background="#CC12141A" IsVisible="{Binding IsBusy}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+          <ProgressBar IsIndeterminate="True" Width="140" Height="6" />
+          <TextBlock Text="{Binding StatusText}" FontSize="12"
+                     Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+        </StackPanel>
+      </Border>
+
+      <Border Grid.Row="3" Background="{DynamicResource PanelBg}" Padding="16,8">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{Binding StatusText}" FontSize="11" TextTrimming="CharacterEllipsis"
+                     VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}" />
+          <ProgressBar Grid.Column="1" IsIndeterminate="True" Width="64" Height="4"
+                       VerticalAlignment="Center" IsVisible="{Binding IsBusy}" />
+        </Grid>
+      </Border>
+    </Grid>
+
+    <!-- ② 点开任务后的加载屏 -->
+    <StackPanel IsVisible="{Binding IsLoadingVisible}"
+                HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+      <ProgressBar IsIndeterminate="True" Width="160" Height="6" />
+      <TextBlock Text="{Binding LoadingText}" FontSize="13"
+                 Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" />
+      <Button Content="取消" Command="{Binding GoBackCommand}" HorizontalAlignment="Center"
+              FontSize="13" Foreground="{DynamicResource Accent}" Padding="16,6" />
+    </StackPanel>
+
+    <!-- ③ 详情页 -->
+    <Grid RowDefinitions="Auto,*" IsVisible="{Binding IsDetailVisible}">
+      <Border Grid.Row="0" Background="{DynamicResource PanelBg}" Padding="8,6">
+        <Grid ColumnDefinitions="Auto,*">
+          <Button Content="←" Command="{Binding GoBackCommand}" FontSize="20"
+                  Padding="12,2" VerticalAlignment="Center"
+                  Foreground="{DynamicResource TextPrimary}" ToolTip.Tip="返回任务列表" />
+          <TextBlock Grid.Column="1" Text="{Binding Detail.Id}" FontSize="14"
+                     VerticalAlignment="Center" Margin="4,0,0,0"
+                     Foreground="{DynamicResource TextMuted}" />
+        </Grid>
+      </Border>
+
+      <views:MobileDetailView Grid.Row="1" DataContext="{Binding Detail}" />
+    </Grid>
+
+    <!-- ④ 连接设置 -->
+    <Grid RowDefinitions="Auto,*" IsVisible="{Binding IsSettingsVisible}">
+      <Border Grid.Row="0" Background="{DynamicResource PanelBg}" Padding="8,6">
+        <Grid ColumnDefinitions="Auto,*">
+          <Button Content="←" Command="{Binding GoBackCommand}" FontSize="20"
+                  Padding="12,2" VerticalAlignment="Center"
+                  Foreground="{DynamicResource TextPrimary}" ToolTip.Tip="返回任务列表" />
+          <TextBlock Grid.Column="1" Text="连接设置" FontSize="14"
+                     VerticalAlignment="Center" Margin="4,0,0,0"
+                     Foreground="{DynamicResource TextMuted}" />
+        </Grid>
+      </Border>
+
+      <ScrollViewer Grid.Row="1" DataContext="{Binding Settings}"
+                    x:DataType="vm:MobileSettingsViewModel">
+        <StackPanel Margin="14,14,14,28" Spacing="10">
+          <TextBlock Text="填好 Dolt 连接后点「保存并连接」，之后打开应用会直接读这个库。"
+                     FontSize="12" TextWrapping="Wrap"
+                     Foreground="{DynamicResource TextMuted}" />
+
+          <Grid ColumnDefinitions="84,*" Margin="0,6,0,0">
+            <TextBlock Text="主机" FontSize="13" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}" />
+            <TextBox Grid.Column="1" Text="{Binding DoltHost}" FontSize="13" MinHeight="40" />
+          </Grid>
+
+          <Grid ColumnDefinitions="84,*">
+            <TextBlock Text="端口" FontSize="13" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}" />
+            <TextBox Grid.Column="1" Text="{Binding DoltPortText}" FontSize="13" MinHeight="40" />
+          </Grid>
+
+          <Grid ColumnDefinitions="84,*">
+            <TextBlock Text="用户" FontSize="13" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}" />
+            <TextBox Grid.Column="1" Text="{Binding DoltUser}" FontSize="13" MinHeight="40" />
+          </Grid>
+
+          <Grid ColumnDefinitions="84,*">
+            <TextBlock Text="密码" FontSize="13" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}" />
+            <TextBox Grid.Column="1" Text="{Binding DoltPassword}" FontSize="13" MinHeight="40"
+                     PasswordChar="●" />
+          </Grid>
+
+          <Grid ColumnDefinitions="84,*">
+            <TextBlock Text="数据库" FontSize="13" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}" />
+            <TextBox Grid.Column="1" Text="{Binding DoltDatabase}" FontSize="13" MinHeight="40" />
+          </Grid>
+
+          <CheckBox Content="使用 TLS" IsChecked="{Binding DoltUseTls}" FontSize="13"
+                    Foreground="{DynamicResource TextPrimary}" />
+          <CheckBox Content="合并全部项目（多库聚合，只读）" IsChecked="{Binding DoltAggregateAll}"
+                    FontSize="13" Foreground="{DynamicResource TextPrimary}" />
+          <CheckBox Content="只读模式（禁止一切写入）" IsChecked="{Binding ReadOnly}"
+                    FontSize="13" Foreground="{DynamicResource TextPrimary}" />
+          <CheckBox Content="演示数据（不连库，内置假数据）" IsChecked="{Binding DemoMode}"
+                    FontSize="13" Foreground="{DynamicResource TextPrimary}" />
+
+          <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
+            <Button Content="保存并连接" Command="{Binding SaveCommand}"
+                    FontSize="14" MinHeight="44"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+            <Button Grid.Column="1" Content="测试连接" Command="{Binding TestConnectionCommand}"
+                    FontSize="14" MinHeight="44" Margin="10,0,0,0"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+          </Grid>
+
+          <TextBlock Text="{Binding StatusMessage}" FontSize="12" TextWrapping="Wrap"
+                     Foreground="{DynamicResource TextMuted}"
+                     IsVisible="{Binding StatusMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Text="{Binding ConfigPath}" FontSize="10" TextWrapping="Wrap"
+                     Foreground="{DynamicResource TextMuted}" Margin="0,4,0,0" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

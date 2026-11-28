@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Directory.Build.props 里是 net11.0，这里覆盖成 Android 目标 -->
+    <TargetFramework>net11.0-android</TargetFramework>
+    <!-- 命名空间不能以 .Android 结尾，否则 Android.App 之类的名字会先解析成项目自己的命名空间 -->
+    <RootNamespace>Bd.Mobile</RootNamespace>
+    <AssemblyName>Bd.Ui.Android</AssemblyName>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- 调试期产出可直接 adb install 的 apk，而不是 aab -->
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <ApplicationId>com.sevencat.bdui</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <!-- 只支持真机/模拟器常见的两种 ABI -->
+    <RuntimeIdentifiers>android-arm64;android-x64</RuntimeIdentifiers>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Themes.Fluent2" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(ExtensionsVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bd.Core\Bd.Core.csproj" />
+  </ItemGroup>
+
+</Project>

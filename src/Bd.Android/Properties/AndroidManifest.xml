@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Dolt 走 MySQL 协议直连，需要网络权限（Release 构建不会自动加） -->
+  <uses-permission android:name="android.permission.INTERNET" />
+
+  <application android:label="Bd.Ui" android:icon="@drawable/beads" />
+</manifest>

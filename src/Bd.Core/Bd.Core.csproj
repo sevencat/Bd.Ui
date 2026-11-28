@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="$(MvvmVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(ExtensionsVersion)" />
+    <!-- net11 起 Microsoft.Extensions.Logging.Abstractions 已随共享框架提供，显式引用会触发 NU1510 -->
     <PackageReference Include="MySqlConnector" Version="$(MySqlConnectorVersion)" />
   </ItemGroup>
 

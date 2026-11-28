@@ -28,9 +28,8 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(ExtensionsVersion)" />
-    <!-- App 只用 ILogger 接口与 LogInformation 等扩展方法（都在 Abstractions 里），
+    <!-- App 只用 ILogger 接口与 LogInformation 等扩展方法（都在 Abstractions 里早于 net11 的共享框架中提供），
          不用 AddLogging/AddDebug，所以不需要 Microsoft.Extensions.Logging / .Logging.Debug。 -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="$(ExtensionsVersion)" />
     <PackageReference Include="Sevencat.Avalonia.Win64Aio" Version="$(Win64AioVersion)" />
   </ItemGroup>
 

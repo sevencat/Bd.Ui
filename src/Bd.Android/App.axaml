@@ -1,0 +1,22 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fluent2="using:Avalonia.Themes.Fluent2"
+             x:Class="Bd.Mobile.App"
+             RequestedThemeVariant="Dark">
+  <Application.Styles>
+    <fluent2:Fluent2Theme />
+  </Application.Styles>
+
+  <!-- 手机端调色板放在 Application 级，供各页面用 DynamicResource 共享 -->
+  <Application.Resources>
+    <SolidColorBrush x:Key="PageBg" Color="#12141A" />
+    <SolidColorBrush x:Key="PanelBg" Color="#1B1E26" />
+    <SolidColorBrush x:Key="SurfaceBg" Color="#20242E" />
+    <SolidColorBrush x:Key="TextPrimary" Color="#E6E8EC" />
+    <SolidColorBrush x:Key="TextMuted" Color="#9AA1AC" />
+    <SolidColorBrush x:Key="Accent" Color="#5B9DFF" />
+    <SolidColorBrush x:Key="DangerText" Color="#FFB4B4" />
+    <SolidColorBrush x:Key="DangerBg" Color="#3A1F24" />
+    <SolidColorBrush x:Key="Divider" Color="#2A2F3A" />
+  </Application.Resources>
+</Application>

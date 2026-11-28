@@ -24,7 +24,7 @@
 ## 环境要求
 
 - Windows x64（当前发布目标为 `win-x64`）
-- 开发：.NET SDK 10.0
+- 开发：.NET SDK 11.0
 - 运行：自包含发布版无需安装 .NET
 - 可访问的 Dolt 服务器（`dolt sql-server`），库里是 beads 的表结构
 - 连接密码写在 config.json（也可留空，改用环境变量 `BEADS_DOLT_PASSWORD`）
@@ -41,6 +41,17 @@ dotnet run --project src/Bd.App
 
 # 3. 测试
 dotnet test Bd.Ui.slnx
+```
+
+### Android 端（手机）
+
+需要 .NET 11 的 android workload 与本地 Android SDK；`Bd.Android` 不在 `Bd.Ui.slnx` 里，避免桌面端 CI 被 workload 拖累，单独构建：
+
+```powershell
+dotnet workload install android
+$env:ANDROID_HOME = 'E:\program\androidsdk'
+dotnet build src/Bd.Android/Bd.Android.csproj      # 产出 bin/Debug/net11.0-android/com.sevencat.bdui*-Signed.apk
+adb install -r src/Bd.Android/bin/Debug/net11.0-android/com.sevencat.bdui-Signed.apk
 ```
 
 首次启动会直接连接 Dolt：连不上时界面顶部提示错误、看板为空，可在「设置」里改主机/端口/库名后点「测试连接」。想先离线看界面，就勾选「演示模式」——内置一份只读示例数据，不访问任何服务器。
